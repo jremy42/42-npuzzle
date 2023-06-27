@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/jremy42/42-npuzzle/input"
+	"fmt"
 	"os"
+
+	"github.com/jremy42/42-npuzzle/input"
 )
 
 var (
@@ -19,11 +21,13 @@ func main() {
 	flag.StringVar(&heuristic, "h", "m", "usage : -h m for manhattan or e for euclidean")
 	flag.Parse()
 
-	if file == "" || mapSize == 0 {
+	if file == "" {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
 	file := input.OpenFile(file)
-	input.GetInput(file)
+	input.ParseInput(file)
+	fmt.Println("print file", file)
+	//input.GetInput(file)
 }

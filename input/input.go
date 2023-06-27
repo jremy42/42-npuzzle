@@ -6,6 +6,7 @@ import (
 	"os"
 	//"strconv"
 	"bufio"
+	"unicode/utf8"
 )
 
 type Board struct {
@@ -23,10 +24,54 @@ func OpenFile(filename string) *os.File {
 	return file
 }
 
+func isSpace(r rune) bool {
+	return r == ' ' || r == '\t' || r == '\n' || r == '\r'
+}
+
+func ScanWords(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	// Skip leading spaces.
+	start := 0
+	for width := 0; start < len(data); start += width {
+		var r rune
+		r, width = utf8.DecodeRune(data[start:])
+		if !isSpace(r) {
+			break
+		}
+		// Skip comments.
+		if r == '#' {
+			for i := start; i < len(data); i++ {
+				if data[i] == '\n' {
+					start = i
+					break
+				}
+			}
+		}
+	}
+	// Scan until space, marking end of word.
+	for width, i := 0, start; i < len(data); i += width {
+		var r rune
+		r, width = utf8.DecodeRune(data[i:])
+		if r == '#' {
+			return i, data[start:i], nil
+		}
+		if isSpace(r) {
+			return i + width, data[start:i], nil
+		}
+	}
+	// If we're at EOF, we have a final, non-empty, non-terminated word. Return it.
+	if atEOF && len(data) > start {
+		return len(data), data[start:], nil
+	}
+	// Request more data.
+	return start, nil, nil
+}
+
 func ParseInput(file *os.File) (size int) {
+	fmt.Println("ParseInput")
 	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanWords)
+	scanner.Split(ScanWords)
 	for scanner.Scan() {
+		fmt.Println(scanner.Text())
 		word := scanner.Text()
 		fmt.Println(word)
 	}
@@ -34,8 +79,9 @@ func ParseInput(file *os.File) (size int) {
 	size = 0
 	return
 }
- /* func GetInput(file *os.File) int {
-	size := parseInput(file)
+
+/* func GetInput(file *os.File) int {
+	size := ParseInput(file)
 	for i := 0; i < size; i++ {
 		board.Board[i] = make([]int, size)
 		for j := 0; j < size; j++ {
@@ -43,4 +89,5 @@ func ParseInput(file *os.File) (size int) {
 		}
 	}
 	return size
-} */
+}
+*/
