@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/jremy42/42-npuzzle/input"
-	"os"
 )
 
 var (
@@ -20,13 +18,14 @@ func main() {
 	flag.StringVar(&heuristic, "h", "m", "usage : -h m for manhattan or e for euclidean")
 	flag.Parse()
 
-	if file == "" {
-		flag.PrintDefaults()
-		os.Exit(1)
+	if file != "" {
+		file := OpenFile(file)
+		size, board := ParseInput(file)
+		fmt.Println("size :", size, "board:", board)
+	} else if mapSize > 0 {
+		size, board := Generator(mapSize)
+		fmt.Println("size :", size, "board:", board)
 	}
 
-	file := input.OpenFile(file)
-	input.ParseInput(file)
-	fmt.Println("print file", file)
 	//input.GetInput(file)
 }

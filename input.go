@@ -1,11 +1,11 @@
-package input
+package main
 
 import (
 	"fmt"
 	//"go/scanner"
-	"os"
-	//"strconv"
 	"bufio"
+	"os"
+	"strconv"
 	"unicode/utf8"
 )
 
@@ -34,9 +34,7 @@ func scanWords(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	for width := 0; start < len(data); start += width {
 		var r rune
 		r, width = utf8.DecodeRune(data[start:])
-		if !isSpace(r) {
-			break
-		}
+
 		// Skip comments.
 		if r == '#' {
 			for i := start; i < len(data); i++ {
@@ -45,6 +43,9 @@ func scanWords(data []byte, atEOF bool) (advance int, token []byte, err error) {
 					break
 				}
 			}
+		}
+		if !isSpace(r) {
+			break
 		}
 	}
 	// Scan until space, marking end of word.
@@ -66,31 +67,31 @@ func scanWords(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	return start, nil, nil
 }
 
-func ParseInput(file *os.File) (size int) {
-	fmt.Println("ParseInput")
+func ParseInput(file *os.File) (size int, board [][]int) {
 	scanner := bufio.NewScanner(file)
-	fmt.Print("befeore split")
 	scanner.Split(scanWords)
-	fmt.Print("after split")
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-		word := scanner.Text()
-		fmt.Println(word)
-	}
-	fmt.Println("after scan")
-	defer file.Close()
-	size = 0
-	return
-}
+	inputArray := make([]int, 0, 100)
 
-/* func GetInput(file *os.File) int {
-	size := ParseInput(file)
+	for scanner.Scan() {
+		word := scanner.Text()
+		if word == "" {
+			continue
+		}
+		num, err := strconv.Atoi(word)
+		if err != nil {
+			fmt.Println("Error parsing input")
+			os.Exit(1)
+		}
+		inputArray = append(inputArray, num)
+	}
+	size = inputArray[0]
+	board = make([][]int, size)
 	for i := 0; i < size; i++ {
-		board.Board[i] = make([]int, size)
+		board[i] = make([]int, size)
 		for j := 0; j < size; j++ {
-			fmt.Fscanf(file, "%d", &board.Board[i][j])
+			board[i][j] = inputArray[i*size+j+1]
 		}
 	}
-	return size
+	defer file.Close()
+	return
 }
-*/
