@@ -23,24 +23,18 @@ func OpenFile(filename string) *os.File {
 	return file
 }
 
-
-
 func ParseInput(file *os.File) (size int) {
-	// ouvrir le fichier et lire l'entrée
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanWords)
 	for scanner.Scan() {
 		word := scanner.Text()
 		fmt.Println(word)
 	}
-
-	// fermer le fichier
 	defer file.Close()
 	size = 0
 	return
 }
-
-/* func GetInput(file *os.File) int {
+ /* func GetInput(file *os.File) int {
 	size := parseInput(file)
 	for i := 0; i < size; i++ {
 		board.Board[i] = make([]int, size)
