@@ -25,5 +25,5 @@ func main() {
 	}
 
 	file := input.OpenFile(file)
-	input.GetInput(file, mapSize)
+	input.GetInput(file)
 }
