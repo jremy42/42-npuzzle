@@ -28,7 +28,7 @@ func isSpace(r rune) bool {
 	return r == ' ' || r == '\t' || r == '\n' || r == '\r'
 }
 
-func ScanWords(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func scanWords(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	// Skip leading spaces.
 
 	fmt.Println("ScanWords")
@@ -71,12 +71,15 @@ func ScanWords(data []byte, atEOF bool) (advance int, token []byte, err error) {
 func ParseInput(file *os.File) (size int) {
 	fmt.Println("ParseInput")
 	scanner := bufio.NewScanner(file)
-	scanner.Split(ScanWords)
+	fmt.Print("befeore split")
+	scanner.Split(scanWords)
+	fmt.Print("after split")
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
 		word := scanner.Text()
 		fmt.Println(word)
 	}
+	fmt.Println("after scan")
 	defer file.Close()
 	size = 0
 	return
