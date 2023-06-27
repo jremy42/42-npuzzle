@@ -2,9 +2,9 @@ package input
 
 import (
 	"fmt"
-	"go/scanner"
+	//"go/scanner"
 	"os"
-	"strconv"
+	//"strconv"
 	"bufio"
 )
 
@@ -25,26 +25,29 @@ func OpenFile(filename string) *os.File {
 
 
 
-func parseInput(file *os.File) (int, int[]) {
-	//open file and read input
-	defer file.Close()
-    scanner := bufio.NewScanner(file)
+func parseInput(file *os.File) int {
+	// ouvrir le fichier et lire l'entrée
+	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanWords)
 	for scanner.Scan() {
 		word := scanner.Text()
 		fmt.Println(word)
 	}
-	return size, parseInput
+
+	// fermer le fichier
+	defer file.Close()
+
+	size := 0
+	return size
 }
 
-func GetInput(file *os.File) Board {
-	board := Board{make([][]int, size)}
-	size, parseInput := parseInput(file)
+/* func GetInput(file *os.File) int {
+	size := parseInput(file)
 	for i := 0; i < size; i++ {
 		board.Board[i] = make([]int, size)
 		for j := 0; j < size; j++ {
 			fmt.Fscanf(file, "%d", &board.Board[i][j])
 		}
 	}
-	return board
-}
+	return size
+} */
