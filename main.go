@@ -1,9 +1,8 @@
 package main
 
 import (
-	"errors"
 	"flag"
-	"fmt"
+	"github.com/jremy/42-npuzzle/input"
 	"os"
 )
 
@@ -25,4 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	file := input.OpenFile(file)
+	board := input.GetInput(file, mapSize)
+	board.PrintBoard()
 }

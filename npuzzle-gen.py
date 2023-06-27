@@ -5,7 +5,7 @@ import argparse
 import random
 
 def make_puzzle(s, solvable, iterations):
-	def swap_empty(p):
+	def swap_empty(pz):
 		idx = p.index(0)
 		poss = []
 		if idx % s > 0:
