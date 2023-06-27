@@ -30,8 +30,6 @@ func isSpace(r rune) bool {
 
 func scanWords(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	// Skip leading spaces.
-
-	fmt.Println("ScanWords")
 	start := 0
 	for width := 0; start < len(data); start += width {
 		var r rune

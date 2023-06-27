@@ -3,9 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-
 	"github.com/jremy42/42-npuzzle/input"
+	"os"
 )
 
 var (
