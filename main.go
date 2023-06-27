@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/jremy/42-npuzzle/input"
+	"github.com/jremy42/42-npuzzle/input"
 	"os"
 )
 
@@ -25,6 +25,5 @@ func main() {
 	}
 
 	file := input.OpenFile(file)
-	board := input.GetInput(file, mapSize)
-	board.PrintBoard()
+	input.GetInput(file, mapSize)
 }

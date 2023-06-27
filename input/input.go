@@ -25,7 +25,7 @@ func OpenFile(filename string) *os.File {
 
 
 
-func parseInput(file *os.File) int {
+func ParseInput(file *os.File) (size int) {
 	// ouvrir le fichier et lire l'entrée
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanWords)
@@ -36,9 +36,8 @@ func parseInput(file *os.File) int {
 
 	// fermer le fichier
 	defer file.Close()
-
-	size := 0
-	return size
+	size = 0
+	return
 }
 
 /* func GetInput(file *os.File) int {
