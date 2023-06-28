@@ -85,10 +85,19 @@ func ParseInput(file *os.File) (size int, board [][]int) {
 		inputArray = append(inputArray, num)
 	}
 	size = inputArray[0]
+	if size*size != len(inputArray)-1 {
+		fmt.Println("Error parsing input")
+		os.Exit(1)
+	}
+
 	board = make([][]int, size)
 	for i := 0; i < size; i++ {
 		board[i] = make([]int, size)
 		for j := 0; j < size; j++ {
+			if inputArray[i*size+j+1] < 0 || inputArray[i*size+j+1] > size*size-1 {
+				fmt.Println("Error parsing input")
+				os.Exit(1)
+			}
 			board[i][j] = inputArray[i*size+j+1]
 		}
 	}
