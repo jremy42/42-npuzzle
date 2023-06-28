@@ -92,6 +92,6 @@ func ParseInput(file *os.File) (size int, board [][]int) {
 			board[i][j] = inputArray[i*size+j+1]
 		}
 	}
-	defer file.Close()
+	file.Close()
 	return
 }
