@@ -14,7 +14,7 @@ var (
 func main() {
 
 	flag.StringVar(&file, "f", "", "usage : -f [filename]")
-	flag.IntVar(&mapSize, "s", 0, "usage : -s [size]")
+	flag.IntVar(&mapSize, "s", 3, "usage : -s [size]")
 	flag.StringVar(&heuristic, "h", "m", "usage : -h m for manhattan or e for euclidean")
 	flag.Parse()
 	var board [][]int
@@ -28,6 +28,7 @@ func main() {
 		size, board = Generator(mapSize)
 		fmt.Println("size :", size, "board:", board)
 	}
+
 	for PrintBoard(board) {
 		mapSize = 3
 		size, board = Generator(mapSize)

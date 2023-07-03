@@ -10,7 +10,7 @@ func IsSolvable(board [][]int) bool {
 }
 
 func isSolved(board [][]int) bool {
-	if board[len(board)-1][len(board)-1] != 0 {
+	if board[len(board)/2][len(board)/2] != 0 {
 		return false
 	}
 	for i := 0; i < len(board)-1; i++ {
