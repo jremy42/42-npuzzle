@@ -2,11 +2,6 @@ package main
 
 import ()
 
-type move2D struct {
-	dir byte
-	X   int
-	Y   int
-}
 
 func gridGenerator(mapSize int) (board [][]int) {
 
