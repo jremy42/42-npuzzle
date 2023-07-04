@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-
 	"strconv"
 
 	ui "github.com/gizak/termui/v3"
@@ -27,7 +26,19 @@ func convertBoard(board [][]int) [][]string {
 
 }
 
-func PrintBoard(board [][]int) bool {
+func displayBoard(board [][]int) {
+	if err := ui.Init(); err != nil {
+		log.Fatalf("failed to initialize termui: %v", err)
+	}
+	defer ui.Close()
+	table := createTable(board)
+	ui.Render(table)
+
+	uiEvents := ui.PollEvents()
+	<-uiEvents
+}
+
+func playBoard(board [][]int) bool {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
@@ -89,6 +100,12 @@ func handleWinScenario() bool {
 			return true
 		}
 	}
+}
+
+func createPressAnyKeyParagraph() (p *widgets.Paragraph){
+	p= widgets.NewParagraph()
+	p.Text = "Pres any key to exit"
+	return
 }
 
 func createWinParagraph() *widgets.Paragraph {

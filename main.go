@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 )
 
 var (
@@ -18,20 +19,23 @@ func main() {
 	flag.StringVar(&heuristic, "h", "m", "usage : -h m for manhattan or e for euclidean")
 	flag.Parse()
 	var board [][]int
-	var size int
 
 	if file != "" {
 		file := OpenFile(file)
-		size, board = ParseInput(file)
-		fmt.Println("size :", size, "board:", board)
+		_, board = ParseInput(file)
 	} else if mapSize > 0 {
 		board = gridGenerator(mapSize)
-		fmt.Println("size :", size, "board:", board)
+	} else {
+		fmt.Println("Invalid Map size")
+		os.Exit(1)
 	}
 
-	for PrintBoard(board) {
-		mapSize = 3
-		board = gridGenerator(mapSize)
-	}
-	//input.GetInput(file)
+	displayBoard(board)
+
+	/*
+		for playBoard(board) {
+			mapSize = 3
+			board = gridGenerator(mapSize)
+		}
+	*/
 }
