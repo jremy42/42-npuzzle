@@ -44,13 +44,13 @@ func PrintBoard(board [][]int) bool {
 		case "q", "<C-c>":
 			return false
 		case "s":
-			moveUp(board)
+			moveUp(board, getEmptySpot(board))
 		case "w":
-			moveDown(board)
+			moveDown(board, getEmptySpot(board))
 		case "d":
-			moveLeft(board)
+			moveLeft(board, getEmptySpot(board))
 		case "a":
-			moveRight(board)
+			moveRight(board, getEmptySpot(board))
 		}
 		if isEqual(board, goal(len(board))) {
 			return handleWinScenario()

@@ -5,3 +5,8 @@ type move2D struct {
 	X   int
 	Y   int
 }
+
+type pos2D struct {
+	X int
+	Y int
+}
