@@ -54,12 +54,8 @@ func PrintBoard(board [][]int) bool {
 		}
 		if isEqual(board, goal(len(board))) {
 			return handleWinScenario()
-		} else {
-			table.Rows = convertBoard(board)
-			ui.Render(table)
 		}
-
-		updateTableRows(table, board)
+		table.Rows = convertBoard(board)
 		ui.Render(table)
 	}
 }
@@ -74,12 +70,8 @@ func createTable(board [][]int) *widgets.Table {
 	table.SetRect(0, 0, len(board)*6, len(board)*2+1)
 	table.FillRow = true
 	table.TextAlignment = ui.AlignCenter
-	updateTableRows(table, board)
-	return table
-}
-
-func updateTableRows(table *widgets.Table, board [][]int) {
 	table.Rows = convertBoard(board)
+	return table
 }
 
 func handleWinScenario() bool {
