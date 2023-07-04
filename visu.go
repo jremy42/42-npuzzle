@@ -27,22 +27,13 @@ func convertBoard(board [][]int) [][]string {
 
 }
 
-func PrintBoard(Board [][]int) bool {
+func PrintBoard(board [][]int) bool {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
 
-	table := widgets.NewTable()
-	table.Title = "n-puzzle"
-	table.TitleStyle = ui.NewStyle(ui.ColorBlue)
-	table.Rows = convertBoard(Board)
-	table.TextStyle = ui.NewStyle(ui.ColorWhite)
-	table.RowSeparator = true
-	table.BorderStyle = ui.NewStyle(ui.ColorGreen)
-	table.SetRect(0, 0, len(Board)*8, len(Board)*4)
-	table.FillRow = true
-	table.TextAlignment = ui.AlignCenter
+	table := createTable(board)
 
 	ui.Render(table)
 
@@ -53,36 +44,64 @@ func PrintBoard(Board [][]int) bool {
 		case "q", "<C-c>":
 			return false
 		case "s":
-			moveUp(Board)
+			moveUp(board)
 		case "w":
-			moveDown(Board)
+			moveDown(board)
 		case "d":
-			moveLeft(Board)
-
+			moveLeft(board)
 		case "a":
-			moveRight(Board)
-		}
-		if isSolved(Board) {
-			ui.Clear()
-			p := widgets.NewParagraph()
-			p.Text = "You won ! do you want to restart ? (y/n)"
-			p.SetRect(0, 0, 25, 5)
-			p.TextStyle = ui.NewStyle(ui.ColorGreen)
-			p.BorderStyle = ui.NewStyle(ui.ColorGreen)
-			ui.Render(p)
-			for {
-				e := <-uiEvents
-				switch e.ID {
-				case "n", "<C-c>":
-					return false
-				case "y":
-					return true
-				}
-			}
-		} else {
-			table.Rows = convertBoard(Board)
-			ui.Render(table)
+			moveRight(board)
 		}
 
+		if isSolved(board) {
+			return handleWinScenario()
+		}
+
+		updateTableRows(table, board)
+		ui.Render(table)
 	}
+}
+
+func createTable(board [][]int) *widgets.Table {
+	table := widgets.NewTable()
+	table.Title = "n-puzzle"
+	table.TitleStyle = ui.NewStyle(ui.ColorBlue)
+	table.TextStyle = ui.NewStyle(ui.ColorWhite)
+	table.RowSeparator = true
+	table.BorderStyle = ui.NewStyle(ui.ColorGreen)
+	table.SetRect(0, 0, len(board)*6, len(board)*2+1)
+	table.FillRow = true
+	table.TextAlignment = ui.AlignCenter
+	updateTableRows(table, board)
+	return table
+}
+
+func updateTableRows(table *widgets.Table, board [][]int) {
+	table.Rows = convertBoard(board)
+}
+
+func handleWinScenario() bool {
+	ui.Clear()
+	p := createWinParagraph()
+	ui.Render(p)
+
+	uiEvents := ui.PollEvents()
+	for {
+		e := <-uiEvents
+		switch e.ID {
+		case "n", "<C-c>":
+			return false
+		case "y":
+			return true
+		}
+	}
+}
+
+func createWinParagraph() *widgets.Paragraph {
+	p := widgets.NewParagraph()
+	p.Text = "You won! Do you want to restart? (y/n)"
+	p.SetRect(0, 0, 25, 5)
+	p.TextStyle = ui.NewStyle(ui.ColorGreen)
+	p.BorderStyle = ui.NewStyle(ui.ColorGreen)
+	return p
 }
