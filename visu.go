@@ -55,13 +55,13 @@ func playBoard(board [][]int) bool {
 		case "q", "<C-c>":
 			return false
 		case "s":
-			moveUp(board, getEmptySpot(board))
+			moveUp(board)
 		case "w":
-			moveDown(board, getEmptySpot(board))
+			moveDown(board)
 		case "d":
-			moveLeft(board, getEmptySpot(board))
+			moveLeft(board)
 		case "a":
-			moveRight(board, getEmptySpot(board))
+			moveRight(board)
 		}
 		if isEqual(board, goal(len(board))) {
 			return handleWinScenario()

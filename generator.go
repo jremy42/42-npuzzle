@@ -32,7 +32,7 @@ func goal(mapSize int) (goal [][]int) {
 	for i := range goal {
 		goal[i] = make([]int, mapSize)
 	}
-	states := []move2D{
+	states := []Move2D{
 		{'r', 1, 0},
 		{'d', 0, 1},
 		{'l', -1, 0},
