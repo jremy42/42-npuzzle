@@ -53,22 +53,7 @@ func PrintBoard(board [][]int) bool {
 			moveRight(board)
 		}
 		if isEqual(board, goal(len(board))) {
-			ui.Clear()
-			p := widgets.NewParagraph()
-			p.Text = "You won ! do you want to restart ? (y/n)"
-			p.SetRect(0, 0, 25, 5)
-			p.TextStyle = ui.NewStyle(ui.ColorGreen)
-			p.BorderStyle = ui.NewStyle(ui.ColorGreen)
-			ui.Render(p)
-			for {
-				e := <-uiEvents
-				switch e.ID {
-				case "n", "<C-c>":
-					return false
-				case "y":
-					return true
-				}
-			}
+			return handleWinScenario()
 		} else {
 			table.Rows = convertBoard(board)
 			ui.Render(table)
