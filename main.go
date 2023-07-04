@@ -25,13 +25,13 @@ func main() {
 		size, board = ParseInput(file)
 		fmt.Println("size :", size, "board:", board)
 	} else if mapSize > 0 {
-		size, board = Generator(mapSize)
+		board = gridGenerator(mapSize)
 		fmt.Println("size :", size, "board:", board)
 	}
 
 	for PrintBoard(board) {
 		mapSize = 3
-		size, board = Generator(mapSize)
+		board = gridGenerator(mapSize)
 	}
 	//input.GetInput(file)
 }

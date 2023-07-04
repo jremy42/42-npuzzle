@@ -1,5 +1,7 @@
 package main
 
+//func getEmptySpot(board [][]int)
+
 func moveUp(board [][]int) [][]int {
 	for i := 0; i < len(board); i++ {
 		for j := 0; j < len(board); j++ {
