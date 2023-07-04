@@ -2,8 +2,14 @@ package main
 
 import (
 	"fmt"
-	"time"
+	//"time"
 )
+
+type move2D struct {
+	dir byte
+	X   int
+	Y   int
+}
 
 func Generator(mapSize int) (size int, board [][]int) {
 
@@ -30,69 +36,36 @@ func Generator(mapSize int) (size int, board [][]int) {
 	return mapSize, board
 }
 
+//j <=> y
+//x <=> i
 func findGoal(mapSize int) (goal [][]int) {
 
 	goal = make([][]int, mapSize)
-	states := [4]byte{'r', 'd', 'l', 'u'}
-
-	for i := 0; i < mapSize; i++ {
+	for i := range goal {
 		goal[i] = make([]int, mapSize)
 	}
-	countLetter := 1
-	iState := 0
-	for i, j := 0, 0; countLetter < mapSize*mapSize-1; {
-		state := states[iState%4]
-
-		switch state {
-		case 'r':
-			for j < mapSize-1 && goal[i][j] == 0 {
-				goal[i][j] = countLetter
-				j++
-				countLetter++
-				fmt.Println("i :", i, "j :", j, "countLetter :", countLetter, "State :", string(state))
-				fmt.Println("goal :", goal)
-				time.Sleep(1000 * time.Millisecond)
-
-			}
-			if goal[i][j] != 0 {
-				j--
-			}
-		case 'd':
-			for i < mapSize-1 && goal[i][j] == 0 {
-				goal[i][j] = countLetter
-				i++
-				countLetter++
-				fmt.Println("i :", i, "j :", j, "countLetter :", countLetter, "State :", string(state))
-				fmt.Println("goal :", goal)
-				time.Sleep(1000 * time.Millisecond)
-			}
-			if goal[i][j] != 0 {
-				i--
-			}
-		case 'l':
-			for j > 0 && goal[i][j] == 0 {
-				goal[i][j] = countLetter
-				j--
-				countLetter++
-				fmt.Println("i :", i, "j :", j, "countLetter :", countLetter, "State :", string(state))
-				fmt.Println("goal :", goal)
-				time.Sleep(1000 * time.Millisecond)
-			}
-			if goal[i][j] != 0 {
-				j++
-			}
-
-		case 'u':
-			for i > 4/iState && goal[i][j] == 0 {
-				goal[i][j] = countLetter
-				i--
-				countLetter++
-				fmt.Println("i :", i, "j :", j, "countLetter :", countLetter, "State :", string(state))
-				fmt.Println("goal :", goal)
-				time.Sleep(1000 * time.Millisecond)
-			}
-		}
-		iState++
+	states := []move2D{
+		{'r', 1, 0},
+		{'d', 0, 1},
+		{'l', -1, 0},
+		{'u', 0, -1},
 	}
-	return goal // TODO
+	goal[0][0] = 1
+	for i, j, dir, count := 0, 0, 0, 1; count < (mapSize*mapSize)-1; {
+		currMove := states[dir % 4]
+		nextJ := j + currMove.Y
+		nextI := i + currMove.X
+		if nextI > mapSize-1 ||
+			nextI < 0 ||
+			nextJ > mapSize-1 ||
+			nextJ < 0 ||
+			goal[nextJ][nextI] != 0 {
+			dir++
+		} else {
+			i, j = nextI, nextJ
+			count++
+			goal[j][i] = count
+		}
+	}
+	return goal
 }
