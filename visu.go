@@ -52,7 +52,7 @@ func PrintBoard(board [][]int) bool {
 		case "a":
 			moveRight(board)
 		}
-		if isEqual(Board, goal(len(Board))) {
+		if isEqual(board, goal(len(board))) {
 			ui.Clear()
 			p := widgets.NewParagraph()
 			p.Text = "You won ! do you want to restart ? (y/n)"
@@ -70,7 +70,7 @@ func PrintBoard(board [][]int) bool {
 				}
 			}
 		} else {
-			table.Rows = convertBoard(Board)
+			table.Rows = convertBoard(board)
 			ui.Render(table)
 		}
 
