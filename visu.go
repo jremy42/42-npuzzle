@@ -34,8 +34,8 @@ func displayBoard(board [][]int) {
 	table := createTable(board)
 	ui.Render(table)
 
-	uiEvents := ui.PollEvents()
-	<-uiEvents
+	//uiEvents := ui.PollEvents()
+	//<-uiEvents
 }
 
 func playBoard(board [][]int) bool {

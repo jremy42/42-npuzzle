@@ -66,6 +66,7 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int) int) (curr
 		currentPath = pathQueue[nextIndex]
 		pathQueue = append(pathQueue[:nextIndex], pathQueue[nextIndex+1:]...)
 
+		fmt.Printf("new try %d with score %d\n", tries, currentNode.score)
 		//fmt.Printf("new try %d\n. QueueSize %d\n", tries, len(posQueue))
 		//fmt.Printf("score %d => current try %v\n", currentNode.score, currentNode.world)
 		//fmt.Printf("current path %v\n", currentPath)
@@ -137,13 +138,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	/*
 	board = [][]int{
-		{0, 2, 4},
-		{5, 8, 1},
-		{3, 6, 7},
+		{2, 4, 5},
+		{6, 7, 8},
+		{1, 3, 0},
 	}
-	*/
 
 	/*
 	ok1, falseBoard1 := moveRight(goal(len(board)))
@@ -156,8 +155,8 @@ func main() {
 	path, seenPos, tries, sizeMax := algo(falseBoard3, FIFO())
 	*/
 
-	path, seenPos, tries, sizeMax := algo(board, FIFO())
-	//path, seenPos, tries, sizeMax := algo(board, hamming_distance)
+	//path, seenPos, tries, sizeMax := algo(board, FIFO())
+	path, seenPos, tries, sizeMax := algo(board, hamming_distance)
 
 	if path != nil {
 		fmt.Println("Succes !")
