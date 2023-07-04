@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	//"time"
-)
+import ()
 
 type move2D struct {
 	dir byte
@@ -11,20 +8,17 @@ type move2D struct {
 	Y   int
 }
 
-func Generator(mapSize int) (size int, board [][]int) {
+func gridGenerator(mapSize int) (board [][]int) {
 
 	randomNumber := make(map[int]int)
 	for i := 0; i < mapSize*mapSize; i++ {
 		randomNumber[i] = i
 	}
-	fmt.Println("randomNumber :", randomNumber)
-
 	board = make([][]int, mapSize)
 
 	j := 0
 	i := 0
 	for _, number := range randomNumber {
-		fmt.Println("number :", number)
 		if i%mapSize == 0 {
 			board[j] = make([]int, mapSize)
 			j++
@@ -32,13 +26,12 @@ func Generator(mapSize int) (size int, board [][]int) {
 		board[j-1][i%mapSize] = number
 		i++
 	}
-
-	return mapSize, board
+	return board
 }
 
-//j <=> y
-//x <=> i
-func findGoal(mapSize int) (goal [][]int) {
+// j <=> y
+// x <=> i
+func goal(mapSize int) (goal [][]int) {
 
 	goal = make([][]int, mapSize)
 	for i := range goal {
@@ -52,7 +45,7 @@ func findGoal(mapSize int) (goal [][]int) {
 	}
 	goal[0][0] = 1
 	for i, j, dir, count := 0, 0, 0, 1; count < (mapSize*mapSize)-1; {
-		currMove := states[dir % 4]
+		currMove := states[dir%4]
 		nextJ := j + currMove.Y
 		nextI := i + currMove.X
 		if nextI > mapSize-1 ||
