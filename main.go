@@ -19,12 +19,14 @@ type eval struct {
 
 var evals = []eval{
 	//{"dijkstra", dijkstra},
+	/*
 	{"greedy_manhattan", greedy_manhattan},
 	{"greedy_hamming", greedy_hamming},
 	{"greedy_inv", greedy_inv},
 	{"astar_hamming", astar_hamming},
+	*/
 	{"astar_manhattan", astar_manhattan},
-	{"astar_inversion", astar_inv},
+	//{"astar_inversion", astar_inv},
 }
 
 var directions = map[byte]moveFx{
@@ -220,17 +222,17 @@ func main() {
 		{6, 7, 8},
 		{1, 3, 0},
 	}
-
 	/*
 		ok1, falseBoard1 := moveRight(goal(len(board)))
 		ok2, falseBoard2 := moveUp(falseBoard1)
 		ok3, falseBoard3 := moveLeft(falseBoard2)
-		if !ok1 || !ok2 || !ok3 {
+		ok4, falseBoard4 := moveDown(falseBoard3)
+		if !ok1 || !ok2 || !ok3  || !ok4 {
 			fmt.Println("Init failure")
 			os.Exit(1)
 		}
-		path, seenPos, tries, sizeMax := algo(falseBoard3, FIFO())
-	*/
+		board = falseBoard4
+		*/
 
 	fmt.Println("Board is :", board)
 	for _, eval := range evals {
