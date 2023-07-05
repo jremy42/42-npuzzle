@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -26,14 +28,37 @@ func convertBoard(board [][]int) [][]string {
 
 }
 
-func displayBoard(board [][]int) {
+func displayBoard(board [][]int, path []byte, seenPos []Node, tries, sizeMax int) {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
 	table := createTable(board)
+	texte := fmt.Sprintf("len of solution %v, %d pos seen, %d tries, %d space complexity\n", len(path), len(seenPos), tries, sizeMax)
+	par := widgets.NewParagraph()
+	par.Text = texte
+	par.SetRect(0, 0, 50, 10)
+	ui.Render(par)
 	ui.Render(table)
 
+	for i := 0; i < len(path); i++ {
+		switch path[i] {
+
+		case 'U':
+			_, board = moveUp(board)
+		case 'D':
+			_, board = moveDown(board)
+		case 'L':
+			_, board = moveLeft(board)
+		case 'R':
+			_, board = moveRight(board)
+		}
+		//fmt.Println(string(path[i]))
+		time.Sleep(500 * time.Millisecond)
+		table.Rows = convertBoard(board)
+		ui.Render(table)
+	}
+	time.Sleep(2000 * time.Millisecond)
 	//uiEvents := ui.PollEvents()
 	//<-uiEvents
 }
