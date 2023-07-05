@@ -147,7 +147,7 @@ func greedy_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 	for i, row := range goalPos {
 		for j, value := range row {
 			if pos[i][j] != value {
-				score ++
+				score++
 			}
 		}
 	}
@@ -216,27 +216,27 @@ func main() {
 	}
 
 	/*
-	board = [][]int{
-		{2, 4, 5},
-		{6, 7, 8},
-		{1, 3, 0},
-	}
+		board = [][]int{
+			{2, 4, 5},
+			{6, 7, 8},
+			{1, 3, 0},
+		}
 
-	board = [][]int{
-		{2, 3, 4, 6},
-		{1, 12, 14, 15},
-		{11, 9, 13, 5},
-		{10, 8, 0, 7},
-	}
+		board = [][]int{
+			{2, 3, 4, 6},
+			{1, 12, 14, 15},
+			{11, 9, 13, 5},
+			{10, 8, 0, 7},
+		}
 	*/
 	/*
-	board = [][]int{
-		{14, 4, 0, 12, 1},
-		{24, 11, 15, 10, 5},
-		{17, 2, 19, 23, 21},
-		{9, 3, 20, 8, 6},
-		{7, 18, 16, 22, 13},
-	}
+		board = [][]int{
+			{14, 4, 0, 12, 1},
+			{24, 11, 15, 10, 5},
+			{17, 2, 19, 23, 21},
+			{9, 3, 20, 8, 6},
+			{7, 18, 16, 22, 13},
+		}
 	*/
 
 	/*
@@ -249,8 +249,11 @@ func main() {
 			os.Exit(1)
 		}
 		board = falseBoard4
-		*/
-
+	*/
+	if !isSolvable(board) {
+		fmt.Println("Board is not solvable")
+		os.Exit(1)
+	}
 	fmt.Println("Board is :", board)
 	for _, eval := range evals {
 		fmt.Println("Now starting with :", eval.name)

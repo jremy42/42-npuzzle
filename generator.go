@@ -2,24 +2,29 @@ package main
 
 import ()
 
-
 func gridGenerator(mapSize int) (board [][]int) {
 
-	randomNumber := make(map[int]int)
-	for i := 0; i < mapSize*mapSize; i++ {
-		randomNumber[i] = i
-	}
-	board = make([][]int, mapSize)
+	for {
 
-	j := 0
-	i := 0
-	for _, number := range randomNumber {
-		if i%mapSize == 0 {
-			board[j] = make([]int, mapSize)
-			j++
+		randomNumber := make(map[int]int)
+		for i := 0; i < mapSize*mapSize; i++ {
+			randomNumber[i] = i
 		}
-		board[j-1][i%mapSize] = number
-		i++
+		board = make([][]int, mapSize)
+
+		j := 0
+		i := 0
+		for _, number := range randomNumber {
+			if i%mapSize == 0 {
+				board[j] = make([]int, mapSize)
+				j++
+			}
+			board[j-1][i%mapSize] = number
+			i++
+		}
+		if isSolvable(board) {
+			break
+		}
 	}
 	return board
 }

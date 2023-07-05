@@ -102,8 +102,8 @@ func handleWinScenario() bool {
 	}
 }
 
-func createPressAnyKeyParagraph() (p *widgets.Paragraph){
-	p= widgets.NewParagraph()
+func createPressAnyKeyParagraph() (p *widgets.Paragraph) {
+	p = widgets.NewParagraph()
 	p.Text = "Pres any key to exit"
 	return
 }
