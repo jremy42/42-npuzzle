@@ -5,10 +5,22 @@ import (
 	"fmt"
 	"os"
 	"time"
-	//"time"
 )
 
 type moveFx func([][]int) (bool, [][]int)
+
+type evalFx func(pos, startPos, goalPos [][]int, path []byte) int
+
+type eval struct {
+	name string
+	fx   evalFx
+}
+
+var evals = []eval{
+	{"dijkstra", dijkstra},
+	{"greedy", greedy},
+	{"astar_hamming", astar_hamming},
+}
 
 var directions = map[byte]moveFx{
 	'U': moveUp,
@@ -29,18 +41,17 @@ func getNextNodeIndex(queue []Node) int {
 	return ret
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int) int, path []byte, currentNode Node, seenNodes []Node) (nextPaths [][]byte, nextNodes []Node, nextSeen []Node) {
+func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode Node, seenNodes []Node) (nextPaths [][]byte, nextNodes []Node, nextSeen []Node) {
 	for key, fx := range directions {
 		ok, nextPos := fx(currentNode.world)
 		if !ok {
 			continue
 		}
-		score := scoreFx(nextPos, startPos, goalPos)
+		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextNode := Node{nextPos, score}
 		if posAlreadySeen(seenNodes, nextPos) == -1 ||
 			score < seenNodes[posAlreadySeen(seenNodes, nextPos)].score {
 			toAdd := DeepSliceCopyAndAdd(path, key)
-			//fmt.Println("to Add", toAdd, "path", path)
 			nextPaths = append(nextPaths, toAdd)
 			nextNodes = append(nextNodes, nextNode)
 			nextSeen = append(nextSeen, nextNode)
@@ -49,7 +60,7 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos
 	return
 }
 
-func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int) int) (currentPath []byte, seenNodes []Node, tries int, maxSizeQueue int) {
+func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int) (currentPath []byte, seenNodes []Node, tries int, maxSizeQueue int) {
 	goalPos := goal(len(world))
 	startPos := Deep2DSliceCopy(world)
 	seenNodes = []Node{{startPos, 0}}
@@ -66,7 +77,7 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int) int) (curr
 		currentPath = pathQueue[nextIndex]
 		pathQueue = append(pathQueue[:nextIndex], pathQueue[nextIndex+1:]...)
 
-		fmt.Printf("new try %d with score %d\n", tries, currentNode.score)
+		//fmt.Printf("new try %d with score %d\n", tries, currentNode.score)
 		//fmt.Printf("new try %d\n. QueueSize %d\n", tries, len(posQueue))
 		//fmt.Printf("score %d => current try %v\n", currentNode.score, currentNode.world)
 		//fmt.Printf("current path %v\n", currentPath)
@@ -83,16 +94,13 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int) int) (curr
 	return nil, seenNodes, tries, maxSizeQueue
 }
 
-func FIFO() func(pos, startPos, goalPos [][]int) int {
-	count := 0
-	return func(pos, startPos, goalPos [][]int) int {
-		count++
-		return count
-	}
+func dijkstra(pos, startPos, goalPos [][]int, path []byte) int {
+	score := len(path) + 1
+	return score
 }
 
-func hamming_distance(pos, startPos, goalPos [][]int) int {
-	score := 0
+func astar_hamming(pos, startPos, goalPos [][]int, path []byte) int {
+	score := len(path) + 1
 	for i, row := range goalPos {
 		for j, value := range row {
 			if pos[i][j] != value {
@@ -103,7 +111,7 @@ func hamming_distance(pos, startPos, goalPos [][]int) int {
 	return score
 }
 
-func manhattan_distance(pos, startPos, goalPos [][]int) int {
+func greedy(pos, startPos, goalPos [][]int, path []byte) int {
 	score := 0
 	for i, row := range goalPos {
 		for j, value := range row {
@@ -145,28 +153,31 @@ func main() {
 	}
 
 	/*
-	ok1, falseBoard1 := moveRight(goal(len(board)))
-	ok2, falseBoard2 := moveUp(falseBoard1)
-	ok3, falseBoard3 := moveLeft(falseBoard2)
-	if !ok1 || !ok2 || !ok3 {
-		fmt.Println("Init failure")
-		os.Exit(1)
-	}
-	path, seenPos, tries, sizeMax := algo(falseBoard3, FIFO())
+		ok1, falseBoard1 := moveRight(goal(len(board)))
+		ok2, falseBoard2 := moveUp(falseBoard1)
+		ok3, falseBoard3 := moveLeft(falseBoard2)
+		if !ok1 || !ok2 || !ok3 {
+			fmt.Println("Init failure")
+			os.Exit(1)
+		}
+		path, seenPos, tries, sizeMax := algo(falseBoard3, FIFO())
 	*/
 
-	//path, seenPos, tries, sizeMax := algo(board, FIFO())
-	path, seenPos, tries, sizeMax := algo(board, hamming_distance)
-
-	if path != nil {
-		fmt.Println("Succes !")
-		fmt.Printf("len of solution %v, %d pos seen, %d tries, %d space complexity\n", len(path), len(seenPos), tries, sizeMax)
-		fmt.Println(string(path))
-		fmt.Println(board)
-	} else {
-		fmt.Println("No solution !")
+	fmt.Println("Board is :", board)
+	for _, eval := range evals {
+		fmt.Println("Now starting with :", eval.name)
+		start := time.Now()
+		path, seenPos, tries, sizeMax := algo(board, eval.fx)
+		end := time.Now()
+		elapsed := end.Sub(start)
+		if path != nil {
+			fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
+			fmt.Printf("len of solution %v, %d pos seen, %d tries, %d space complexity\n", len(path), len(seenPos), tries, sizeMax)
+			fmt.Println(string(path))
+		} else {
+			fmt.Println("No solution !")
+		}
 	}
-	displayBoard(board)
 	/*
 		for playBoard(board) {
 			mapSize = 3

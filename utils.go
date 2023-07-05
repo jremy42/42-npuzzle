@@ -39,9 +39,7 @@ func posAlreadySeen(slice []Node, toFind [][]int) int {
 
 func DeepSliceCopyAndAdd[T any](slice []T, elems ...T) []T {
 	newSlice := make([]T, len(slice), len(slice)+len(elems))
-	if len(slice) > 0 {
-		copy(newSlice, slice)
-	}
+	copy(newSlice, slice)
 	newSlice = append(newSlice, elems...)
 	return newSlice
 }
