@@ -19,12 +19,10 @@ type eval struct {
 
 var evals = []eval{
 	//{"dijkstra", dijkstra},
-	/*
-	{"greedy_manhattan", greedy_manhattan},
-	{"greedy_hamming", greedy_hamming},
-	{"greedy_inv", greedy_inv},
-	{"astar_hamming", astar_hamming},
-	*/
+	//{"greedy_manhattan", greedy_manhattan},
+	//{"greedy_hamming", greedy_hamming},
+	//{"greedy_inv", greedy_inv},
+	//{"astar_hamming", astar_hamming},
 	{"astar_manhattan", astar_manhattan},
 	//{"astar_inversion", astar_inv},
 }
@@ -217,11 +215,30 @@ func main() {
 		os.Exit(1)
 	}
 
+	/*
 	board = [][]int{
 		{2, 4, 5},
 		{6, 7, 8},
 		{1, 3, 0},
 	}
+
+	board = [][]int{
+		{2, 3, 4, 6},
+		{1, 12, 14, 15},
+		{11, 9, 13, 5},
+		{10, 8, 0, 7},
+	}
+	*/
+	/*
+	board = [][]int{
+		{14, 4, 0, 12, 1},
+		{24, 11, 15, 10, 5},
+		{17, 2, 19, 23, 21},
+		{9, 3, 20, 8, 6},
+		{7, 18, 16, 22, 13},
+	}
+	*/
+
 	/*
 		ok1, falseBoard1 := moveRight(goal(len(board)))
 		ok2, falseBoard2 := moveUp(falseBoard1)
