@@ -28,16 +28,16 @@ func convertBoard(board [][]int) [][]string {
 
 }
 
-func displayBoard(board [][]int, path []byte, seenPos []Node, tries, sizeMax int) {
+func displayBoard(board [][]int, path []byte, seenPos []Node, elvalName string, tries, sizeMax int) {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
 	table := createTable(board)
-	texte := fmt.Sprintf("len of solution %v, %d pos seen, %d tries, %d space complexity\n", len(path), len(seenPos), tries, sizeMax)
+	texte := fmt.Sprintf("Success with %v \n\nlen of solution %v, %d pos seen, %d tries, %d space complexity\n", elvalName, len(path), len(seenPos), tries, sizeMax)
 	par := widgets.NewParagraph()
 	par.Text = texte
-	par.SetRect(0, 0, 50, 10)
+	par.SetRect(len(board)*6, 0, 65, 7)
 	ui.Render(par)
 	ui.Render(table)
 
