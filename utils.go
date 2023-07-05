@@ -44,13 +44,13 @@ func Index[T comparable](slice []T, toFind T) int {
 	return -1
 }
 
-func posAlreadySeen(slice []Node, toFind [][]int) int {
-	for index, v := range slice {
+func posAlreadySeen(slice []Node, toFind [][]int) Node {
+	for _, v := range slice {
 		if isEqual(v.world, toFind) {
-			return index
+			return v
 		}
 	}
-	return -1
+	return Node{nil, -1}
 }
 
 func DeepSliceCopyAndAdd[T any](slice []T, elems ...T) []T {
@@ -77,6 +77,13 @@ func Max(a, b int) int {
 	} else {
 		return b
 	}
+}
+
+func Abs(a int) int {
+	if a >= 0 {
+		return a
+	}
+	return -a
 }
 
 func openDir(dir string) []fs.FileInfo {

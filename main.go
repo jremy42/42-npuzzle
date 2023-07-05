@@ -19,12 +19,16 @@ type eval struct {
 
 var evals = []eval{
 	//{"dijkstra", dijkstra},
-	//{"greedy_manhattan", greedy_manhattan},
-	//{"greedy_hamming", greedy_hamming},
-	//{"greedy_inv", greedy_inv},
-	//{"astar_hamming", astar_hamming},
-	{"astar_manhattan", astar_manhattan},
-	//{"astar_inversion", astar_inv},
+	//	{"greedy_hamming", greedy_hamming},
+	//	{"greedy_inv", greedy_inv},
+	{"greedy_manhattan", greedy_manhattan},
+	{"astar_custom", astar_custom},
+	//{"astar_manhattan_weighted_4", astar_weighted_4},
+	//{"astar_manhattan_weighted_2", astar_weighted_2},
+	//{"astar_manhattan_weighted_1.5", astar_weighted_1dot5},
+	//	{"astar_hamming", astar_hamming},
+		{"astar_manhattan", astar_manhattan},
+	//	{"astar_inversion", astar_inv},
 }
 
 var directions = map[byte]moveFx{
@@ -54,8 +58,9 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos
 		}
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextNode := Node{nextPos, score}
-		if posAlreadySeen(seenNodes, nextPos) == -1 ||
-			score < seenNodes[posAlreadySeen(seenNodes, nextPos)].score {
+		alreadyExplored := posAlreadySeen(seenNodes, nextPos)
+		if alreadyExplored.world == nil ||
+			score < alreadyExplored.score {
 			toAdd := DeepSliceCopyAndAdd(path, key)
 			nextPaths = append(nextPaths, toAdd)
 			nextNodes = append(nextNodes, nextNode)
@@ -72,25 +77,37 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 	posQueue := DeepSliceCopyAndAdd(seenNodes)
 	pathQueue := [][]byte{{}}
 
+	var elapsed time.Duration
 	for ; len(posQueue) > 0; tries++ {
 		maxSizeQueue = Max(maxSizeQueue, len(posQueue))
 
 		nextIndex := getNextNodeIndex(posQueue)
-		currentNode := posQueue[nextIndex]
-		posQueue = append(posQueue[:nextIndex], posQueue[nextIndex+1:]...)
 
+		currentNode := posQueue[nextIndex]
 		currentPath = pathQueue[nextIndex]
+
+		if tries > 0 && tries%1000 == 0 {
+			fmt.Println("1k. Len of try :", len(currentPath), "score :", currentNode.score)
+		}
+
+		posQueue = append(posQueue[:nextIndex], posQueue[nextIndex+1:]...)
 		pathQueue = append(pathQueue[:nextIndex], pathQueue[nextIndex+1:]...)
 
 		//fmt.Printf("new try %d with score %d\n", tries, currentNode.score)
 		//fmt.Printf("new try %d\n. QueueSize %d\n", tries, len(posQueue))
 		//fmt.Printf("score %d => current try %v\n", currentNode.score, currentNode.world)
 		//fmt.Printf("current path %v\n", currentPath)
-		time.Sleep(0 * time.Millisecond)
+		//time.Sleep(0 * time.Millisecond)
 		if isEqual(goalPos, currentNode.world) {
 			return
 		}
+		start := time.Now()
+
 		nextPaths, nextPoses, nextSeen := getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, seenNodes)
+		end := time.Now()
+		elapsed += end.Sub(start)
+		//fmt.Println("found in :", elapsed.String())
+
 		//fmt.Println("next Paths", nextPaths)
 		posQueue = append(posQueue, nextPoses...)
 		pathQueue = append(pathQueue, nextPaths...)
@@ -118,7 +135,9 @@ func astar_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 
 func astar_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
 	score := len(path) + 1
+	//j is Y
 	for j, row := range goalPos {
+		//i is X
 		for i, value := range row {
 			if pos[j][i] != value {
 				wrongPositon := getValuePostion(pos, value)
@@ -129,11 +148,78 @@ func astar_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
 	return score
 }
 
+func astar_weighted_4(pos, startPos, goalPos [][]int, path []byte) int {
+	initDist := len(path) + 1
+	//j is Y
+
+	heuristic := 0
+	for j, row := range goalPos {
+		//i is X
+		for i, value := range row {
+			if pos[j][i] != value {
+				wrongPositon := getValuePostion(pos, value)
+				heuristic += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
+			}
+		}
+	}
+	return initDist + 4*heuristic
+}
+
+func astar_weighted_2(pos, startPos, goalPos [][]int, path []byte) int {
+	initDist := len(path) + 1
+	//j is Y
+
+	heuristic := 0
+	for j, row := range goalPos {
+		//i is X
+		for i, value := range row {
+			if pos[j][i] != value {
+				wrongPositon := getValuePostion(pos, value)
+				heuristic += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
+			}
+		}
+	}
+	return initDist + 2*heuristic
+}
+
+func astar_weighted_1dot5(pos, startPos, goalPos [][]int, path []byte) int {
+	initDist := len(path) + 1
+	//j is Y
+
+	heuristic := 0
+	for j, row := range goalPos {
+		//i is X
+		for i, value := range row {
+			if pos[j][i] != value {
+				wrongPositon := getValuePostion(pos, value)
+				heuristic += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
+			}
+		}
+	}
+	return initDist + (heuristic*3)/2
+}
+
+func astar_custom(pos, startPos, goalPos [][]int, path []byte) int {
+	initDist := len(path) + 1
+	//j is Y
+	heuristic := 0
+	for j, row := range goalPos {
+		//i is X
+		for i, value := range row {
+			if pos[j][i] != value {
+				wrongPositon := getValuePostion(pos, value)
+				heuristic += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
+			}
+		}
+	}
+	return initDist + 10 * heuristic //+ 0 * greedy_inv(pos, startPos, goalPos, path)
+}
+
 func greedy_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
 	score := 0
-	for i, row := range goalPos {
-		for j, value := range row {
-			if pos[i][j] != value {
+	for j, row := range goalPos {
+		for i, value := range row {
+			if pos[j][i] != value {
 				wrongPositon := getValuePostion(pos, value)
 				score += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
 			}
@@ -221,6 +307,34 @@ func main() {
 			{6, 7, 8},
 			{1, 3, 0},
 		}
+	*/
+
+	/*
+		board = [][]int{
+			{2, 1, 7},
+			{4, 0, 8},
+			{3, 5, 6},
+		}
+	*/
+
+	/*
+		board = [][]int{
+			{10, 3, 14, 4},
+			{2, 12, 5, 6},
+			{11, 0, 15, 7},
+			{1, 9, 8, 13},
+		}
+			ok1, falseBoard1 := moveRight(goal(len(board)))
+			ok2, falseBoard2 := moveUp(falseBoard1)
+			ok3, falseBoard3 := moveLeft(falseBoard2)
+			ok4, falseBoard4 := moveDown(falseBoard3)
+			if !ok1 || !ok2 || !ok3  || !ok4 {
+				fmt.Println("Init failure")
+				os.Exit(1)
+			}
+			board = falseBoard4
+	*/
+
 
 		board = [][]int{
 			{2, 3, 4, 6},
@@ -228,7 +342,6 @@ func main() {
 			{11, 9, 13, 5},
 			{10, 8, 0, 7},
 		}
-	*/
 	/*
 		board = [][]int{
 			{14, 4, 0, 12, 1},
