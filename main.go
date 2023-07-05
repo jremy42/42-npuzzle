@@ -335,6 +335,40 @@ func main() {
 			board = falseBoard4
 	*/
 
+		}
+
+		board = [][]int{
+			{2, 3, 4, 6},
+			{1, 12, 14, 15},
+			{11, 9, 13, 5},
+			{10, 8, 0, 7},
+		}
+	*/
+	/*
+		board = [][]int{
+			{14, 4, 0, 12, 1},
+			{24, 11, 15, 10, 5},
+			{17, 2, 19, 23, 21},
+			{9, 3, 20, 8, 6},
+			{7, 18, 16, 22, 13},
+		}
+	*/
+
+	/*
+		ok1, falseBoard1 := moveRight(goal(len(board)))
+		ok2, falseBoard2 := moveUp(falseBoard1)
+		ok3, falseBoard3 := moveLeft(falseBoard2)
+		ok4, falseBoard4 := moveDown(falseBoard3)
+		if !ok1 || !ok2 || !ok3  || !ok4 {
+			fmt.Println("Init failure")
+			os.Exit(1)
+		}
+		board = falseBoard4
+	*/
+	if !isSolvable(board) {
+		fmt.Println("Board is not solvable")
+		os.Exit(1)
+	}
 	fmt.Println("Board is :", board)
 	for _, eval := range evals {
 		fmt.Println("Now starting with :", eval.name)
@@ -343,6 +377,7 @@ func main() {
 		end := time.Now()
 		elapsed := end.Sub(start)
 		if path != nil {
+			displayBoard(board, path, seenPos, tries, sizeMax)
 			fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
 			fmt.Printf("len of solution %v, %d pos seen, %d tries, %d space complexity\n", len(path), len(seenPos), tries, sizeMax)
 			fmt.Println(string(path))
