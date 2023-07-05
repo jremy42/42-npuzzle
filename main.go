@@ -19,7 +19,7 @@ type eval struct {
 
 var evals = []eval{
 	//{"dijkstra", dijkstra},
-	{"greedy", greedy},
+	{"greedy_manhattan", greedy},
 	{"astar_hamming", astar_hamming},
 	{"astar_manhattan", astar_manhattan},
 }
@@ -131,7 +131,8 @@ func greedy(pos, startPos, goalPos [][]int, path []byte) int {
 	for i, row := range goalPos {
 		for j, value := range row {
 			if pos[i][j] != value {
-				score++
+				wrongPositon := getValuePostion(pos, value)
+				score += int(math.Abs(float64(wrongPositon.X - i)) + math.Abs(float64(wrongPositon.Y-j)))
 			}
 		}
 	}
