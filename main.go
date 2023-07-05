@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"time"
 )
@@ -17,9 +18,10 @@ type eval struct {
 }
 
 var evals = []eval{
-	{"dijkstra", dijkstra},
+	//{"dijkstra", dijkstra},
 	{"greedy", greedy},
 	{"astar_hamming", astar_hamming},
+	{"astar_manhattan", astar_manhattan},
 }
 
 var directions = map[byte]moveFx{
@@ -101,10 +103,23 @@ func dijkstra(pos, startPos, goalPos [][]int, path []byte) int {
 
 func astar_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 	score := len(path) + 1
-	for i, row := range goalPos {
-		for j, value := range row {
-			if pos[i][j] != value {
+	for j, row := range goalPos {
+		for i, value := range row {
+			if pos[j][i] != value {
 				score++
+			}
+		}
+	}
+	return score
+}
+
+func astar_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
+	score := len(path) + 1
+	for j, row := range goalPos {
+		for i, value := range row {
+			if pos[j][i] != value {
+				wrongPositon := getValuePostion(pos, value)
+				score += int(math.Abs(float64(wrongPositon.X - i)) + math.Abs(float64(wrongPositon.Y-j)))
 			}
 		}
 	}

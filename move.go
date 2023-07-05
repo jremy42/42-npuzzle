@@ -1,9 +1,9 @@
 package main
 
-func getEmptySpot(board [][]int) Pos2D {
+func getValuePostion(board [][]int, toFind int) Pos2D {
 	for i, line := range board {
 		for j, value := range line {
-			if value == 0 {
+			if value == toFind {
 				return Pos2D{X: j, Y: i}
 			}
 		}
@@ -16,7 +16,7 @@ func swap[T any](a, b *T) {
 }
 
 func moveUp(board [][] int) (ok bool, updatedBoard [][]int) {
-	empty := getEmptySpot(board)
+	empty := getValuePostion(board, 0)
 	updatedBoard = Deep2DSliceCopy(board)
 	if empty.Y != 0 {
 		swap(&updatedBoard[empty.Y][empty.X], &updatedBoard[empty.Y-1][empty.X])
@@ -26,7 +26,7 @@ func moveUp(board [][] int) (ok bool, updatedBoard [][]int) {
 }
 
 func moveDown(board [][]int) (ok bool, updatedBoard [][]int) {
-	empty := getEmptySpot(board)
+	empty := getValuePostion(board, 0)
 	updatedBoard = Deep2DSliceCopy(board)
 	if empty.Y != len(board)-1 {
 		swap(&updatedBoard[empty.Y][empty.X], &updatedBoard[empty.Y+1][empty.X])
@@ -36,7 +36,7 @@ func moveDown(board [][]int) (ok bool, updatedBoard [][]int) {
 }
 
 func moveLeft(board [][]int) (ok bool, updatedBoard [][]int) {
-	empty := getEmptySpot(board)
+	empty := getValuePostion(board, 0)
 	updatedBoard = Deep2DSliceCopy(board)
 	if empty.X != 0 {
 		swap(&updatedBoard[empty.Y][empty.X], &updatedBoard[empty.Y][empty.X-1])
@@ -46,7 +46,7 @@ func moveLeft(board [][]int) (ok bool, updatedBoard [][]int) {
 }
 
 func moveRight(board [][]int) (ok bool, updatedBoard [][]int) {
-	empty := getEmptySpot(board)
+	empty := getValuePostion(board, 0)
 	updatedBoard = Deep2DSliceCopy(board)
 	if empty.X != len(board)-1 {
 		swap(&updatedBoard[empty.Y][empty.X], &updatedBoard[empty.Y][empty.X+1])
