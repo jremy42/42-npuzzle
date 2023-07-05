@@ -262,6 +262,7 @@ func main() {
 		end := time.Now()
 		elapsed := end.Sub(start)
 		if path != nil {
+			displayBoard(board, path, seenPos, tries, sizeMax)
 			fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
 			fmt.Printf("len of solution %v, %d pos seen, %d tries, %d space complexity\n", len(path), len(seenPos), tries, sizeMax)
 			fmt.Println(string(path))
