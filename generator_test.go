@@ -54,3 +54,39 @@ func TestIsEqual(t *testing.T) {
 	}
 
 }
+
+func TestMatrixToTable(t *testing.T) {
+	test := []struct {
+		matrix [][]int
+		want   []int
+	}{
+		{[][]int{{1, 2, 3}, {8, 0, 4}, {7, 6, 5}}, []int{1, 2, 3, 4, 5, 6, 7, 8, 0}},
+		{[][]int{{1, 2, 3, 4}, {12, 13, 14, 5}, {11, 0, 15, 6}, {10, 9, 8, 7}}, []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0}},
+		{[][]int{{1, 2, 3, 4, 5}, {16, 17, 18, 19, 6}, {15, 24, 0, 20, 7}, {14, 23, 22, 21, 8}, {13, 12, 11, 10, 9}}, []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0}},
+	}
+	for _, test := range test {
+		if got := matrixToTable(test.matrix); isEqualTable(got, test.want) != true {
+			t.Errorf("matrixToTable(%v) = %v", test.matrix, got)
+		}
+	}
+
+}
+
+func TestIsSolvable(t *testing.T) {
+	dir := "maps"
+	files := openDir(dir)
+	for _, file := range files {
+		openFile := dir + "/" + file.Name()
+		_, matrix := ParseInput(OpenFile(openFile))
+		if file.Name()[0:1] == "u" {
+			if isSolvable(matrix) != false {
+				t.Errorf("file [%v] isSolvable(%v) = %v", file.Name(), matrix, isSolvable(matrix))
+			}
+		} else {
+			if isSolvable(matrix) != true {
+				t.Errorf("file [%v] isSolvable(%v) = %v", file.Name(), matrix, isSolvable(matrix))
+			}
+		}
+	}
+
+}
