@@ -19,9 +19,12 @@ type eval struct {
 
 var evals = []eval{
 	//{"dijkstra", dijkstra},
-	{"greedy_manhattan", greedy},
+	{"greedy_manhattan", greedy_manhattan},
+	{"greedy_hamming", greedy_hamming},
+	{"greedy_inv", greedy_inv},
 	{"astar_hamming", astar_hamming},
 	{"astar_manhattan", astar_manhattan},
+	{"astar_inversion", astar_inv},
 }
 
 var directions = map[byte]moveFx{
@@ -119,24 +122,74 @@ func astar_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
 		for i, value := range row {
 			if pos[j][i] != value {
 				wrongPositon := getValuePostion(pos, value)
-				score += int(math.Abs(float64(wrongPositon.X - i)) + math.Abs(float64(wrongPositon.Y-j)))
+				score += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
 			}
 		}
 	}
 	return score
 }
 
-func greedy(pos, startPos, goalPos [][]int, path []byte) int {
+func greedy_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
 	score := 0
 	for i, row := range goalPos {
 		for j, value := range row {
 			if pos[i][j] != value {
 				wrongPositon := getValuePostion(pos, value)
-				score += int(math.Abs(float64(wrongPositon.X - i)) + math.Abs(float64(wrongPositon.Y-j)))
+				score += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
 			}
 		}
 	}
 	return score
+}
+
+func greedy_hamming(pos, startPos, goalPos [][]int, path []byte) int {
+	score := 0
+	for i, row := range goalPos {
+		for j, value := range row {
+			if pos[i][j] != value {
+				score ++
+			}
+		}
+	}
+	return score
+}
+
+func greedy_inv(pos, startPos, goalPos [][]int, path []byte) int {
+	score := 0
+	flattenedPos := make([]int, 0, len(pos)*len(pos))
+	for _, row := range pos {
+		for _, value := range row {
+			flattenedPos = append(flattenedPos, value)
+		}
+	}
+	inversion := 0
+	for i := range flattenedPos {
+		for j := i + 1; j < len(flattenedPos); j++ {
+			if flattenedPos[i] > 0 && flattenedPos[j] > 0 && flattenedPos[i] > flattenedPos[j] {
+				inversion++
+			}
+		}
+	}
+	return score + inversion
+}
+
+func astar_inv(pos, startPos, goalPos [][]int, path []byte) int {
+	score := len(path) + 1
+	flattenedPos := make([]int, 0, len(pos)*len(pos))
+	for _, row := range pos {
+		for _, value := range row {
+			flattenedPos = append(flattenedPos, value)
+		}
+	}
+	inversion := 0
+	for i := range flattenedPos {
+		for j := i + 1; j < len(flattenedPos); j++ {
+			if flattenedPos[i] > 0 && flattenedPos[j] > 0 && flattenedPos[i] > flattenedPos[j] {
+				inversion++
+			}
+		}
+	}
+	return score + inversion
 }
 
 func main() {
