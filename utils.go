@@ -1,6 +1,10 @@
 package main
 
-import ()
+import (
+	"io/fs"
+	"io/ioutil"
+	"log"
+)
 
 func isEqual[T comparable](a, b [][]T) bool {
 	if len(a) != len(b) {
@@ -14,6 +18,18 @@ func isEqual[T comparable](a, b [][]T) bool {
 			if a[i][j] != b[i][j] {
 				return false
 			}
+		}
+	}
+	return true
+}
+
+func isEqualTable[T comparable](a, b []T) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
 		}
 	}
 	return true
@@ -61,4 +77,12 @@ func Max(a, b int) int {
 	} else {
 		return b
 	}
+}
+
+func openDir(dir string) []fs.FileInfo {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return files
 }
