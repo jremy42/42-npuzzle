@@ -55,7 +55,7 @@ func TestIsEqual(t *testing.T) {
 
 }
 
-func TestMatrixToTable(t *testing.T) {
+func TestmatrixToTableSnail(t *testing.T) {
 	test := []struct {
 		matrix [][]int
 		want   []int
@@ -65,8 +65,8 @@ func TestMatrixToTable(t *testing.T) {
 		{[][]int{{1, 2, 3, 4, 5}, {16, 17, 18, 19, 6}, {15, 24, 0, 20, 7}, {14, 23, 22, 21, 8}, {13, 12, 11, 10, 9}}, []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 0}},
 	}
 	for _, test := range test {
-		if got := matrixToTable(test.matrix); isEqualTable(got, test.want) != true {
-			t.Errorf("matrixToTable(%v) = %v", test.matrix, got)
+		if got := matrixToTableSnail(test.matrix); isEqualTable(got, test.want) != true {
+			t.Errorf("matrixToTableSnail(%v) = %v", test.matrix, got)
 		}
 	}
 
@@ -86,6 +86,23 @@ func TestIsSolvable(t *testing.T) {
 			if isSolvable(matrix) != true {
 				t.Errorf("file [%v] isSolvable(%v) = %v", file.Name(), matrix, isSolvable(matrix))
 			}
+		}
+	}
+
+}
+
+func TestMatrixToString(t *testing.T) {
+
+	test := []struct {
+		matrix [][]int
+		want   string
+	}{
+		{[][]int{{1, 2, 3}, {8, 0, 4}, {7, 6, 5}}, "1.2.3.8.0.4.7.6.5."},
+		{[][]int{{1, 2, 3, 4}, {12, 13, 14, 5}, {11, 0, 15, 6}, {10, 9, 8, 7}}, "1.2.3.4.12.13.14.5.11.0.15.6.10.9.8.7."},
+	}
+	for _, test := range test {
+		if got := matrixToString(test.matrix); got != test.want {
+			t.Errorf("matrixTo(%v) = %v", test.matrix, got)
 		}
 	}
 

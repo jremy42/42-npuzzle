@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"log"
+	"strconv"
 )
 
 func isEqual[T comparable](a, b [][]T) bool {
@@ -92,4 +93,17 @@ func openDir(dir string) []fs.FileInfo {
 		log.Fatal(err)
 	}
 	return files
+}
+
+func matrixToString(matrix [][]int) string {
+
+	results := ""
+
+	for i := 0; i < len(matrix); i++ {
+
+		for j := 0; j < len(matrix[i]); j++ {
+			results += strconv.Itoa(matrix[i][j]) + "."
+		}
+	}
+	return results
 }

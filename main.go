@@ -12,10 +12,9 @@ var evals = []eval{
 	//	{"greedy_hamming", greedy_hamming},
 	//	{"greedy_inv", greedy_inv},
 	//{"greedy_manhattan", greedy_manhattan},
-	//{"astar_manhattan_weighted_2", astar_weighted_2},
 	//	{"astar_hamming", astar_hamming},
 	{"astar_manhattan", astar_manhattan_generator(1)},
-	//	{"astar_inversion", astar_inv},
+	//{"astar_inversion", astar_inv},
 }
 
 var directions = map[byte]moveFx{
@@ -37,7 +36,7 @@ func getNextNodeIndex(queue []Node) int {
 	return ret
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode Node, seenNodes []Node, elapsed *[4]time.Duration) (nextPaths [][]byte, nextNodes []Node, nextSeen []Node) {
+func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode Node, seenNodes *map[string]int, elapsed *[4]time.Duration) (nextPaths [][]byte, nextNodes []Node) {
 	for key, fx := range directions {
 		start := time.Now()
 		ok, nextPos := fx(currentNode.world)
@@ -49,16 +48,19 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextNode := Node{nextPos, score}
 		start = time.Now()
-		alreadyExplored := posAlreadySeen(seenNodes, nextPos)
+		keyNode := matrixToString(nextPos)
+		seenNodesScore, alreadyExplored := (*seenNodes)[keyNode]
+		//alreadyExplored := posAlreadySeen(seenNodes, nextPos)
 		end = time.Now()
 		elapsed[2] += end.Sub(start)
-		if alreadyExplored.world == nil ||
-			score < alreadyExplored.score {
+		if alreadyExplored == false ||
+			score < seenNodesScore {
 			start = time.Now()
 			toAdd := DeepSliceCopyAndAdd(path, key)
 			nextPaths = append(nextPaths, toAdd)
 			nextNodes = append(nextNodes, nextNode)
-			nextSeen = append(nextSeen, nextNode)
+			//nextSeen = append(nextSeen, nextNode)
+			(*seenNodes)[keyNode] = score
 			end = time.Now()
 			elapsed[3] += end.Sub(start)
 		}
@@ -66,11 +68,13 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos
 	return
 }
 
-func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int) (currentPath []byte, seenNodes []Node, tries int, maxSizeQueue int) {
+func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int) (currentPath []byte, seenNodes map[string]int, tries int, maxSizeQueue int) {
 	goalPos := goal(len(world))
 	startPos := Deep2DSliceCopy(world)
-	seenNodes = []Node{{startPos, 0}}
-	posQueue := DeepSliceCopyAndAdd(seenNodes)
+	//seenNodes = []Node{{startPos, 0}}
+	seenNodes = make(map[string]int, 10000)
+	seenNodes[matrixToString(startPos)] = 0
+	posQueue := []Node{{startPos, 0}}
 	pathQueue := [][]byte{{}}
 
 	var elapsed [4]time.Duration
@@ -103,14 +107,14 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 		}
 
 		start := time.Now()
-		nextPaths, nextPoses, nextSeen := getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, seenNodes, &elapsed)
+		nextPaths, nextPoses := getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &elapsed)
 		end := time.Now()
 		elapsed[0] += end.Sub(start)
 
 		//fmt.Println("next Paths", nextPaths)
 		posQueue = append(posQueue, nextPoses...)
 		pathQueue = append(pathQueue, nextPaths...)
-		seenNodes = append(seenNodes, nextSeen...)
+		//seenNodes = append(seenNodes, nextSeen...)
 	}
 	return nil, seenNodes, tries, maxSizeQueue
 }
@@ -139,35 +143,34 @@ func main() {
 	}
 
 	/*
-		board = [][]int{
-			{2, 4, 5},
-			{6, 7, 8},
-			{1, 3, 0},
-		}
+				board = [][]int{
+					{2, 4, 5},
+					{6, 7, 8},
+					{1, 3, 0},
+				}
 
-	*/
+		/* board = [][]int{
+				{2, 1, 7},
+				{4, 0, 8},
+				{3, 5, 6},
+			} */
+
 	board = [][]int{
-		{2, 1, 7},
-		{4, 0, 8},
-		{3, 5, 6},
+		{10, 3, 14, 4},
+		{2, 12, 5, 6},
+		{11, 0, 15, 7},
+		{1, 9, 8, 13},
 	}
-
 	/*
-		board = [][]int{
-			{10, 3, 14, 4},
-			{2, 12, 5, 6},
-			{11, 0, 15, 7},
-			{1, 9, 8, 13},
+		ok1, falseBoard1 := moveRight(goal(len(board)))
+		ok2, falseBoard2 := moveUp(falseBoard1)
+		ok3, falseBoard3 := moveLeft(falseBoard2)
+		ok4, falseBoard4 := moveDown(falseBoard3)
+		if !ok1 || !ok2 || !ok3  || !ok4 {
+			fmt.Println("Init failure")
+			os.Exit(1)
 		}
-			ok1, falseBoard1 := moveRight(goal(len(board)))
-			ok2, falseBoard2 := moveUp(falseBoard1)
-			ok3, falseBoard3 := moveLeft(falseBoard2)
-			ok4, falseBoard4 := moveDown(falseBoard3)
-			if !ok1 || !ok2 || !ok3  || !ok4 {
-				fmt.Println("Init failure")
-				os.Exit(1)
-			}
-			board = falseBoard4
+		board = falseBoard4
 	*/
 
 	/*

@@ -33,12 +33,7 @@ func greedy_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 }
 
 func greedy_inv(pos, startPos, goalPos [][]int, path []byte) int {
-	flattenedPos := make([]int, 0, len(pos)*len(pos))
-	for _, row := range pos {
-		for _, value := range row {
-			flattenedPos = append(flattenedPos, value)
-		}
-	}
+	flattenedPos := matrixToTableSnail(pos)
 	inversion := 0
 	for i := range flattenedPos {
 		for j := i + 1; j < len(flattenedPos); j++ {
@@ -56,7 +51,7 @@ func astar_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 func astar_manhattan_generator(weight int) evalFx {
 	return func(pos, startPos, goalPos [][]int, path []byte) int {
 		initDist := len(path) + 1
-		return initDist + weight * greedy_manhattan(pos, startPos, goalPos, path)
+		return initDist + weight*greedy_manhattan(pos, startPos, goalPos, path)
 	}
 }
 
