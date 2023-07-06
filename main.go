@@ -12,8 +12,8 @@ var evals = []eval{
 	//{"dijkstra", dijkstra},
 	//	{"greedy_hamming", greedy_hamming},
 	//	{"greedy_inv", greedy_inv},
-	//{"greedy_manhattan", greedy_manhattan},
-	{"astar_manhattan", astar_manhattan_generator(1.5)},
+	{"greedy_manhattan", greedy_manhattan},
+	{"astar_manhattan", astar_manhattan_generator(1)},
 	//{"astar_manhattan", astar_manhattan_generator(2)},
 	//	{"astar_hamming", astar_hamming},
 	//{"astar_inversion", astar_inv},
@@ -38,10 +38,8 @@ func getNextNodeIndex(queue []Node) int {
 	return ret
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode *Item, seenNodes *map[string]int, posQueue *PriorityQueue, elapsed *[4]time.Duration) {
-	for _, fx := range directions {
-		//A faire
-		//for key, fx := range directions {
+func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode *Item, seenNodes *map[string]int, posQueue *PriorityQueue, elapsed *[4]time.Duration) *PriorityQueue {
+	for key, fx := range directions {
 		start := time.Now()
 		ok, nextPos := fx(currentNode.node.world)
 		end := time.Now()
@@ -50,7 +48,8 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos
 			continue
 		}
 		score := scoreFx(nextPos, startPos, goalPos, path)
-		nextNode := Node{nextPos, score}
+		nextPath := DeepSliceCopyAndAdd(path, key)
+		nextNode := Node{nextPos, nextPath, score}
 		start = time.Now()
 		keyNode := matrixToString(nextPos)
 		seenNodesScore, alreadyExplored := (*seenNodes)[keyNode]
@@ -64,14 +63,15 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos
 			//toAdd := DeepSliceCopyAndAdd(path, key)
 			//A faire
 			//nextPaths = append(nextPaths, toAdd)
-			heap.Push(posQueue, &Item{node: nextNode})
+			item := &Item{node: nextNode}
+			heap.Push(posQueue, item)
 			//nextSeen = append(nextSeen, nextNode)
 			(*seenNodes)[keyNode] = score
 			end = time.Now()
 			elapsed[3] += end.Sub(start)
 		}
 	}
-	return
+	return posQueue
 }
 
 func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int) (currentPath []byte, seenNodes map[string]int, tries int, maxSizeQueue int) {
@@ -82,9 +82,8 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 	seenNodes[matrixToString(startPos)] = 0
 	//posQueue := []Node{{startPos, 0}}
 	posQueue := make(PriorityQueue, 1)
-	posQueue[0] = &Item{node : Node{world :startPos, score : 0}}
+	posQueue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
 	heap.Init(&posQueue)
-	//A rajouter
 	//pathQueue := [][]byte{{}}
 
 	var elapsed [4]time.Duration
@@ -101,9 +100,10 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 
 		//A rajouter
 		//currentPath = pathQueue[nextIndex]
+		currentPath = currentNode.node.path
 
-		if tries > 0 && tries%1000 == 0 {
-			fmt.Printf("%d k tries. Len of try : %d. Score : %d\n", tries/1000, len(currentPath), currentNode.node.score)
+		if tries > 0 && tries%10000 == 0 {
+			fmt.Printf("%d * 10k tries. Len of try : %d. Score : %d\n", tries/10000, len(currentNode.node.path), currentNode.node.score)
 		}
 
 		//posQueue = append(posQueue[:nextIndex], posQueue[nextIndex+1:]...)
@@ -124,13 +124,14 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 		}
 
 		//nextPaths, nextPoses := getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &elapsed)
-		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &posQueue, &elapsed)
+		posQueue = *getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &posQueue, &elapsed)
 
 		//fmt.Println("next Paths", nextPaths)
 		//posQueue = append(posQueue, nextPoses...)
 		//pathQueue = append(pathQueue, nextPaths...)
 		//seenNodes = append(seenNodes, nextSeen...)
 	}
+	fmt.Println("tries", tries)
 	return nil, seenNodes, tries, maxSizeQueue
 }
 

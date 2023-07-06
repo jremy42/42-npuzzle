@@ -13,6 +13,7 @@ type Pos2D struct {
 
 type Node struct {
 	world [][]int
+	path  []byte
 	score int
 }
 

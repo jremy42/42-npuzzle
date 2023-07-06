@@ -4,7 +4,6 @@ import (
 	"container/heap"
 )
 
-
 type Item struct {
 	node  Node
 	index int
@@ -40,7 +39,7 @@ func (pq *PriorityQueue) Pop() any {
 	return item
 }
 
-//not mandatory but improves speed. Need index
+// not mandatory but improves speed. Need index
 func (pq *PriorityQueue) update(item *Item, updatedNode Node) {
 	item.node = updatedNode
 	heap.Fix(pq, item.index)
