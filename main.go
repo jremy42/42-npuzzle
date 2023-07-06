@@ -11,7 +11,7 @@ var evals = []eval{
 	//{"dijkstra", dijkstra},
 	//	{"greedy_hamming", greedy_hamming},
 	//	{"greedy_inv", greedy_inv},
-	{"greedy_manhattan", greedy_manhattan},
+	//{"greedy_manhattan", greedy_manhattan},
 	//{"astar_manhattan_weighted_2", astar_weighted_2},
 	//	{"astar_hamming", astar_hamming},
 	{"astar_manhattan", astar_manhattan_generator(1)},
@@ -74,7 +74,7 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 		currentPath = pathQueue[nextIndex]
 
 		if tries > 0 && tries%1000 == 0 {
-			fmt.Println("1k. Len of try :", len(currentPath), "score :", currentNode.score)
+			fmt.Printf("%d k tries. Len of try : %d. Score : %d\n",tries/1000, len(currentPath), currentNode.score)
 		}
 
 		posQueue = append(posQueue[:nextIndex], posQueue[nextIndex+1:]...)
@@ -86,14 +86,14 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 		//fmt.Printf("current path %v\n", currentPath)
 		//time.Sleep(0 * time.Millisecond)
 		if isEqual(goalPos, currentNode.world) {
+			fmt.Println("getNexMoves total time :", elapsed.String())
 			return
 		}
-		start := time.Now()
 
+		start := time.Now()
 		nextPaths, nextPoses, nextSeen := getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, seenNodes)
 		end := time.Now()
 		elapsed += end.Sub(start)
-		//fmt.Println("found in :", elapsed.String())
 
 		//fmt.Println("next Paths", nextPaths)
 		posQueue = append(posQueue, nextPoses...)
