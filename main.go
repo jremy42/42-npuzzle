@@ -87,8 +87,9 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 	//pathQueue := [][]byte{{}}
 
 	var elapsed [4]time.Duration
-	for ; len(posQueue) > 0; tries++ {
-		maxSizeQueue = Max(maxSizeQueue, len(posQueue))
+	globalStart := time.Now()
+	for lenqueue := 1; len(posQueue) > 0; lenqueue, tries = len(posQueue), tries + 1{
+		maxSizeQueue = Max(maxSizeQueue, lenqueue)
 
 		start := time.Now()
 		//nextIndex := getNextNodeIndex(posQueue)
@@ -102,8 +103,9 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 		//currentPath = pathQueue[nextIndex]
 		currentPath = currentNode.node.path
 
-		if tries > 0 && tries%10000 == 0 {
-			fmt.Printf("%d * 10k tries. Len of try : %d. Score : %d\n", tries/10000, len(currentNode.node.path), currentNode.node.score)
+		if tries > 0 && tries%100000 == 0 {
+			globalEnd := time.Now()
+			fmt.Printf("Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d\n", globalEnd.Sub(globalStart) , tries/100000, len(currentNode.node.path), currentNode.node.score)
 		}
 
 		//posQueue = append(posQueue[:nextIndex], posQueue[nextIndex+1:]...)
