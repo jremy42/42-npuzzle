@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/heap"
 	"flag"
 	"fmt"
 	"os"
@@ -37,10 +38,12 @@ func getNextNodeIndex(queue []Node) int {
 	return ret
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode Node, seenNodes *map[string]int, elapsed *[4]time.Duration) (nextPaths [][]byte, nextNodes []Node) {
-	for key, fx := range directions {
+func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode *Item, seenNodes *map[string]int, posQueue *PriorityQueue, elapsed *[4]time.Duration) {
+	for _, fx := range directions {
+		//A faire
+		//for key, fx := range directions {
 		start := time.Now()
-		ok, nextPos := fx(currentNode.world)
+		ok, nextPos := fx(currentNode.node.world)
 		end := time.Now()
 		elapsed[1] += end.Sub(start)
 		if !ok {
@@ -57,9 +60,11 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos
 		if !alreadyExplored ||
 			score < seenNodesScore {
 			start = time.Now()
-			toAdd := DeepSliceCopyAndAdd(path, key)
-			nextPaths = append(nextPaths, toAdd)
-			nextNodes = append(nextNodes, nextNode)
+			//A faire
+			//toAdd := DeepSliceCopyAndAdd(path, key)
+			//A faire
+			//nextPaths = append(nextPaths, toAdd)
+			heap.Push(posQueue, &Item{node: nextNode})
 			//nextSeen = append(nextSeen, nextNode)
 			(*seenNodes)[keyNode] = score
 			end = time.Now()
@@ -75,34 +80,42 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 	//seenNodes = []Node{{startPos, 0}}
 	seenNodes = make(map[string]int, 10000)
 	seenNodes[matrixToString(startPos)] = 0
-	posQueue := []Node{{startPos, 0}}
-	pathQueue := [][]byte{{}}
+	//posQueue := []Node{{startPos, 0}}
+	posQueue := make(PriorityQueue, 1)
+	posQueue[0] = &Item{node : Node{world :startPos, score : 0}}
+	heap.Init(&posQueue)
+	//A rajouter
+	//pathQueue := [][]byte{{}}
 
 	var elapsed [4]time.Duration
 	for ; len(posQueue) > 0; tries++ {
 		maxSizeQueue = Max(maxSizeQueue, len(posQueue))
 
 		start := time.Now()
-		nextIndex := getNextNodeIndex(posQueue)
+		//nextIndex := getNextNodeIndex(posQueue)
+		currentNode := heap.Pop(&posQueue).(*Item)
 		end := time.Now()
 		elapsed[0] += end.Sub(start)
 
-		currentNode := posQueue[nextIndex]
-		currentPath = pathQueue[nextIndex]
+		//currentNode := posQueue[nextIndex]
+
+		//A rajouter
+		//currentPath = pathQueue[nextIndex]
 
 		if tries > 0 && tries%1000 == 0 {
-			fmt.Printf("%d k tries. Len of try : %d. Score : %d\n", tries/1000, len(currentPath), currentNode.score)
+			fmt.Printf("%d k tries. Len of try : %d. Score : %d\n", tries/1000, len(currentPath), currentNode.node.score)
 		}
 
-		posQueue = append(posQueue[:nextIndex], posQueue[nextIndex+1:]...)
-		pathQueue = append(pathQueue[:nextIndex], pathQueue[nextIndex+1:]...)
+		//posQueue = append(posQueue[:nextIndex], posQueue[nextIndex+1:]...)
+
+		//pathQueue = append(pathQueue[:nextIndex], pathQueue[nextIndex+1:]...)
 
 		//fmt.Printf("new try %d with score %d\n", tries, currentNode.score)
 		//fmt.Printf("new try %d\n. QueueSize %d\n", tries, len(posQueue))
 		//fmt.Printf("score %d => current try %v\n", currentNode.score, currentNode.world)
 		//fmt.Printf("current path %v\n", currentPath)
 		//time.Sleep(0 * time.Millisecond)
-		if isEqual(goalPos, currentNode.world) {
+		if isEqual(goalPos, currentNode.node.world) {
 			fmt.Println("getNexMoves total time :", elapsed[0].String())
 			fmt.Println("time applying moves:", elapsed[1].String())
 			fmt.Println("time finding if node already exists in nodes list:", elapsed[2].String())
@@ -110,11 +123,12 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 			return
 		}
 
-		nextPaths, nextPoses := getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &elapsed)
+		//nextPaths, nextPoses := getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &elapsed)
+		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &posQueue, &elapsed)
 
 		//fmt.Println("next Paths", nextPaths)
-		posQueue = append(posQueue, nextPoses...)
-		pathQueue = append(pathQueue, nextPaths...)
+		//posQueue = append(posQueue, nextPoses...)
+		//pathQueue = append(pathQueue, nextPaths...)
 		//seenNodes = append(seenNodes, nextSeen...)
 	}
 	return nil, seenNodes, tries, maxSizeQueue
