@@ -3,31 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math"
 	"os"
 	"time"
 )
-
-type moveFx func([][]int) (bool, [][]int)
-
-type evalFx func(pos, startPos, goalPos [][]int, path []byte) int
-
-type eval struct {
-	name string
-	fx   evalFx
-}
 
 var evals = []eval{
 	//{"dijkstra", dijkstra},
 	//	{"greedy_hamming", greedy_hamming},
 	//	{"greedy_inv", greedy_inv},
 	{"greedy_manhattan", greedy_manhattan},
-	{"astar_custom", astar_custom},
-	//{"astar_manhattan_weighted_4", astar_weighted_4},
 	//{"astar_manhattan_weighted_2", astar_weighted_2},
-	//{"astar_manhattan_weighted_1.5", astar_weighted_1dot5},
 	//	{"astar_hamming", astar_hamming},
-		{"astar_manhattan", astar_manhattan},
+	{"astar_manhattan", astar_manhattan_generator(1)},
 	//	{"astar_inversion", astar_inv},
 }
 
@@ -116,168 +103,6 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 	return nil, seenNodes, tries, maxSizeQueue
 }
 
-func dijkstra(pos, startPos, goalPos [][]int, path []byte) int {
-	score := len(path) + 1
-	return score
-}
-
-func astar_hamming(pos, startPos, goalPos [][]int, path []byte) int {
-	score := len(path) + 1
-	for j, row := range goalPos {
-		for i, value := range row {
-			if pos[j][i] != value {
-				score++
-			}
-		}
-	}
-	return score
-}
-
-func astar_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
-	score := len(path) + 1
-	//j is Y
-	for j, row := range goalPos {
-		//i is X
-		for i, value := range row {
-			if pos[j][i] != value {
-				wrongPositon := getValuePostion(pos, value)
-				score += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
-			}
-		}
-	}
-	return score
-}
-
-func astar_weighted_4(pos, startPos, goalPos [][]int, path []byte) int {
-	initDist := len(path) + 1
-	//j is Y
-
-	heuristic := 0
-	for j, row := range goalPos {
-		//i is X
-		for i, value := range row {
-			if pos[j][i] != value {
-				wrongPositon := getValuePostion(pos, value)
-				heuristic += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
-			}
-		}
-	}
-	return initDist + 4*heuristic
-}
-
-func astar_weighted_2(pos, startPos, goalPos [][]int, path []byte) int {
-	initDist := len(path) + 1
-	//j is Y
-
-	heuristic := 0
-	for j, row := range goalPos {
-		//i is X
-		for i, value := range row {
-			if pos[j][i] != value {
-				wrongPositon := getValuePostion(pos, value)
-				heuristic += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
-			}
-		}
-	}
-	return initDist + 2*heuristic
-}
-
-func astar_weighted_1dot5(pos, startPos, goalPos [][]int, path []byte) int {
-	initDist := len(path) + 1
-	//j is Y
-
-	heuristic := 0
-	for j, row := range goalPos {
-		//i is X
-		for i, value := range row {
-			if pos[j][i] != value {
-				wrongPositon := getValuePostion(pos, value)
-				heuristic += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
-			}
-		}
-	}
-	return initDist + (heuristic*3)/2
-}
-
-func astar_custom(pos, startPos, goalPos [][]int, path []byte) int {
-	initDist := len(path) + 1
-	//j is Y
-	heuristic := 0
-	for j, row := range goalPos {
-		//i is X
-		for i, value := range row {
-			if pos[j][i] != value {
-				wrongPositon := getValuePostion(pos, value)
-				heuristic += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
-			}
-		}
-	}
-	return initDist + 10 * heuristic //+ 0 * greedy_inv(pos, startPos, goalPos, path)
-}
-
-func greedy_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
-	score := 0
-	for j, row := range goalPos {
-		for i, value := range row {
-			if pos[j][i] != value {
-				wrongPositon := getValuePostion(pos, value)
-				score += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
-			}
-		}
-	}
-	return score
-}
-
-func greedy_hamming(pos, startPos, goalPos [][]int, path []byte) int {
-	score := 0
-	for i, row := range goalPos {
-		for j, value := range row {
-			if pos[i][j] != value {
-				score++
-			}
-		}
-	}
-	return score
-}
-
-func greedy_inv(pos, startPos, goalPos [][]int, path []byte) int {
-	score := 0
-	flattenedPos := make([]int, 0, len(pos)*len(pos))
-	for _, row := range pos {
-		for _, value := range row {
-			flattenedPos = append(flattenedPos, value)
-		}
-	}
-	inversion := 0
-	for i := range flattenedPos {
-		for j := i + 1; j < len(flattenedPos); j++ {
-			if flattenedPos[i] > 0 && flattenedPos[j] > 0 && flattenedPos[i] > flattenedPos[j] {
-				inversion++
-			}
-		}
-	}
-	return score + inversion
-}
-
-func astar_inv(pos, startPos, goalPos [][]int, path []byte) int {
-	score := len(path) + 1
-	flattenedPos := make([]int, 0, len(pos)*len(pos))
-	for _, row := range pos {
-		for _, value := range row {
-			flattenedPos = append(flattenedPos, value)
-		}
-	}
-	inversion := 0
-	for i := range flattenedPos {
-		for j := i + 1; j < len(flattenedPos); j++ {
-			if flattenedPos[i] > 0 && flattenedPos[j] > 0 && flattenedPos[i] > flattenedPos[j] {
-				inversion++
-			}
-		}
-	}
-	return score + inversion
-}
-
 func main() {
 	var (
 		file      string
@@ -307,15 +132,13 @@ func main() {
 			{6, 7, 8},
 			{1, 3, 0},
 		}
-	*/
 
-	/*
-		board = [][]int{
-			{2, 1, 7},
-			{4, 0, 8},
-			{3, 5, 6},
-		}
 	*/
+	board = [][]int{
+		{2, 1, 7},
+		{4, 0, 8},
+		{3, 5, 6},
+	}
 
 	/*
 		board = [][]int{
@@ -335,13 +158,14 @@ func main() {
 			board = falseBoard4
 	*/
 
-
+	/*
 		board = [][]int{
 			{2, 3, 4, 6},
 			{1, 12, 14, 15},
 			{11, 9, 13, 5},
 			{10, 8, 0, 7},
 		}
+	*/
 	/*
 		board = [][]int{
 			{14, 4, 0, 12, 1},
@@ -375,7 +199,7 @@ func main() {
 		end := time.Now()
 		elapsed := end.Sub(start)
 		if path != nil {
-			displayBoard(board, path, seenPos, eval.name+" in "+elapsed.String(), tries, sizeMax)
+			//displayBoard(board, path, seenPos, eval.name+" in "+elapsed.String(), tries, sizeMax)
 			fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
 			fmt.Printf("len of solution %v, %d pos seen, %d tries, %d space complexity\n", len(path), len(seenPos), tries, sizeMax)
 			fmt.Println(string(path))
