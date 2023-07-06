@@ -12,8 +12,9 @@ var evals = []eval{
 	//	{"greedy_hamming", greedy_hamming},
 	//	{"greedy_inv", greedy_inv},
 	//{"greedy_manhattan", greedy_manhattan},
-	//	{"astar_hamming", astar_hamming},
+	//{"astar_hamming", astar_hamming},
 	{"astar_manhattan", astar_manhattan_generator(1.5)},
+	//{"astar_manhattan", astar_manhattan_generator(2)},
 	//{"astar_inversion", astar_inv},
 }
 
@@ -81,7 +82,10 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 	for ; len(posQueue) > 0; tries++ {
 		maxSizeQueue = Max(maxSizeQueue, len(posQueue))
 
+		start := time.Now()
 		nextIndex := getNextNodeIndex(posQueue)
+		end := time.Now()
+		elapsed[0] += end.Sub(start)
 
 		currentNode := posQueue[nextIndex]
 		currentPath = pathQueue[nextIndex]
@@ -106,10 +110,7 @@ func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byt
 			return
 		}
 
-		start := time.Now()
 		nextPaths, nextPoses := getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &elapsed)
-		end := time.Now()
-		elapsed[0] += end.Sub(start)
 
 		//fmt.Println("next Paths", nextPaths)
 		posQueue = append(posQueue, nextPoses...)
