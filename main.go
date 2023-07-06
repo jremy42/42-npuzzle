@@ -13,7 +13,7 @@ var evals = []eval{
 	//	{"greedy_inv", greedy_inv},
 	//{"greedy_manhattan", greedy_manhattan},
 	//	{"astar_hamming", astar_hamming},
-	//{"astar_manhattan", astar_manhattan_generator(1)},
+	{"astar_manhattan", astar_manhattan_generator(1)},
 	//{"astar_inversion", astar_inv},
 }
 
