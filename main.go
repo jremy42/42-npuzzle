@@ -13,7 +13,7 @@ var evals = []eval{
 	//	{"greedy_inv", greedy_inv},
 	//{"greedy_manhattan", greedy_manhattan},
 	//	{"astar_hamming", astar_hamming},
-	{"astar_manhattan", astar_manhattan_generator(1)},
+	//{"astar_manhattan", astar_manhattan_generator(1)},
 	//{"astar_inversion", astar_inv},
 }
 
@@ -53,7 +53,7 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos
 		//alreadyExplored := posAlreadySeen(seenNodes, nextPos)
 		end = time.Now()
 		elapsed[2] += end.Sub(start)
-		if alreadyExplored == false ||
+		if !alreadyExplored ||
 			score < seenNodesScore {
 			start = time.Now()
 			toAdd := DeepSliceCopyAndAdd(path, key)
@@ -155,12 +155,12 @@ func main() {
 				{3, 5, 6},
 			} */
 
-	board = [][]int{
+	/* 	board = [][]int{
 		{10, 3, 14, 4},
 		{2, 12, 5, 6},
 		{11, 0, 15, 7},
 		{1, 9, 8, 13},
-	}
+	} */
 	/*
 		ok1, falseBoard1 := moveRight(goal(len(board)))
 		ok2, falseBoard2 := moveUp(falseBoard1)
