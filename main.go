@@ -4,8 +4,8 @@ import (
 	"container/heap"
 	"flag"
 	"fmt"
-	//"log"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -13,11 +13,22 @@ var evals = []eval{
 	//{"dijkstra", dijkstra},
 	//	{"greedy_hamming", greedy_hamming},
 	//	{"greedy_inv", greedy_inv},
-	{"greedy_manhattan", greedy_manhattan},
+	//{"greedy_manhattan", greedy_manhattan},
 	{"astar_manhattan", astar_manhattan_generator(1)},
 	//{"astar_manhattan", astar_manhattan_generator(2)},
 	//	{"astar_hamming", astar_hamming},
 	//{"astar_inversion", astar_inv},
+}
+
+type safeData struct {
+	mu           sync.Mutex
+	posQueue     PriorityQueue
+	seenNodes    map[string]int
+	tries        int
+	maxSizeQueue int
+	path         []byte // solution
+	over         bool
+	end          chan bool
 }
 
 var directions = []struct {
@@ -28,6 +39,15 @@ var directions = []struct {
 	{'D', moveDown},
 	{'L', moveLeft},
 	{'R', moveRight},
+}
+
+func printTimeInfo(elapsed []time.Duration) {
+
+	fmt.Println("time to get next node to explore from Queue :", elapsed[0].String())
+	fmt.Println("time applying moves:", elapsed[1].String())
+	fmt.Println("time calculating costs and creating node:", elapsed[2].String())
+	fmt.Println("time finding if node already exists in nodes list:", elapsed[3].String())
+	fmt.Println("time adding node to queues:", elapsed[4].String())
 }
 
 func getNextNodeIndex(queue []Node) int {
@@ -42,7 +62,7 @@ func getNextNodeIndex(queue []Node) int {
 	return ret
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode *Item, seenNodes *map[string]int, posQueue *PriorityQueue, elapsed *[8]time.Duration) {
+func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, elapsed []time.Duration, data *safeData) {
 	for _, dir := range directions {
 		start := time.Now()
 		ok, nextPos := dir.fx(currentNode.node.world)
@@ -59,56 +79,73 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos
 		elapsed[2] += end.Sub(start)
 		start = time.Now()
 		keyNode := matrixToString(nextPos)
-		seenNodesScore, alreadyExplored := (*seenNodes)[keyNode]
+		data.mu.Lock()
+		seenNodesScore, alreadyExplored := (data.seenNodes)[keyNode]
+		data.mu.Unlock()
 		end = time.Now()
 		elapsed[3] += end.Sub(start)
 		if !alreadyExplored ||
 			score < seenNodesScore {
 			start = time.Now()
 			item := &Item{node: nextNode}
-			heap.Push(posQueue, item)
-			(*seenNodes)[keyNode] = score
+			data.mu.Lock()
+			heap.Push(&data.posQueue, item)
+			(data.seenNodes)[keyNode] = score
+			data.mu.Unlock()
 			end = time.Now()
 			elapsed[4] += end.Sub(start)
 		}
 	}
 }
 
-func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int) (currentPath []byte, seenNodes map[string]int, tries int, maxSizeQueue int) {
+func algo(world [][]int, scoreFx evalFx, data *safeData) {
 	goalPos := goal(len(world))
 	startPos := Deep2DSliceCopy(world)
-	seenNodes = make(map[string]int, 1000000)
-	seenNodes[matrixToString(startPos)] = 0
-	posQueue := make(PriorityQueue, 1, 1000000)
-	posQueue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
-	heap.Init(&posQueue)
-
 	var elapsed [8]time.Duration
 	startAlgo := time.Now()
-	for lenqueue := 1; len(posQueue) > 0; lenqueue, tries = len(posQueue), tries+1 {
-		maxSizeQueue = Max(maxSizeQueue, lenqueue)
-
+	for {
+		data.mu.Lock()
+		data.tries++
+		lenqueue := len(data.posQueue)
+		if len(data.posQueue) == 0 || data.over {
+			break
+		}
+		data.maxSizeQueue = Max(data.maxSizeQueue, lenqueue)
 		start := time.Now()
-		currentNode := heap.Pop(&posQueue).(*Item)
+		currentNode := heap.Pop(&data.posQueue).(*Item)
 		end := time.Now()
 		elapsed[0] += end.Sub(start)
 
-		currentPath = currentNode.node.path
-		if tries > 0 && tries%100000 == 0 {
-			fmt.Printf("Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d\n", time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue)
+		currentPath := currentNode.node.path
+		if data.tries > 0 && data.tries%100000 == 0 {
+			fmt.Printf("Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d\n", time.Since(startAlgo), data.tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue)
 		}
+		data.mu.Unlock()
 
 		if isEqual(goalPos, currentNode.node.world) {
-			fmt.Println("getNexMoves total time :", elapsed[0].String())
-			fmt.Println("time applying moves:", elapsed[1].String())
-			fmt.Println("time calculating costs and creating node:", elapsed[2].String())
-			fmt.Println("time finding if node already exists in nodes list:", elapsed[3].String())
-			fmt.Println("time adding node to queues:", elapsed[4].String())
+			printTimeInfo(elapsed[:])
+			data.mu.Lock()
+			data.path = currentPath
+			data.over = true
+			data.end <- true
+			data.mu.Unlock()
 			return
 		}
-		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &posQueue, &elapsed)
+		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, elapsed[:], data)
 	}
-	return nil, seenNodes, tries, maxSizeQueue
+}
+
+func initData(board [][]int) (data *safeData) {
+	data = &safeData{}
+	data.seenNodes = make(map[string]int, 1000000)
+	startPos := Deep2DSliceCopy(board)
+	data.seenNodes[matrixToString(startPos)] = 0
+	data.posQueue = make(PriorityQueue, 1, 1000000)
+	data.posQueue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
+	heap.Init(&data.posQueue)
+	data.end = make(chan bool)
+	data.over = false
+	return
 }
 
 func main() {
@@ -141,14 +178,18 @@ func main() {
 	for _, eval := range evals {
 		fmt.Println("Now starting with :", eval.name)
 		start := time.Now()
-		path, seenPos, tries, sizeMax := algo(board, eval.fx)
+		data := initData(board)
+		for i := 0; i < 1; i++ {
+			go algo(board, eval.fx, data)
+		}
+		<-data.end
 		end := time.Now()
 		elapsed := end.Sub(start)
-		if path != nil {
+		if data.path != nil {
 			//displayBoard(board, path, seenPos, eval.name+" in "+elapsed.String(), tries, sizeMax)
 			fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
-			fmt.Printf("len of solution %v, %d pos seen, %d tries, %d space complexity\n", len(path), len(seenPos), tries, sizeMax)
-			fmt.Println(string(path))
+			fmt.Printf("len of solution %v, %d pos seen, %d tries, %d space complexity\n", len(data.path), len(data.seenNodes), data.tries, data.maxSizeQueue)
+			fmt.Println(string(data.path))
 		} else {
 			fmt.Println("No solution !")
 		}
