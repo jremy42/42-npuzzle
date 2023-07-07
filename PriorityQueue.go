@@ -21,7 +21,7 @@ func (pq PriorityQueue) Less(i, j int) bool {
 
 func (pq PriorityQueue) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
-	pq[j].index = i
+	pq[i].index = i
 	pq[j].index = j
 }
 
