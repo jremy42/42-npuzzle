@@ -39,44 +39,7 @@ func (pq *PriorityQueue) Pop() any {
 	return item
 }
 
-// not mandatory but improves speed. Need index
 func (pq *PriorityQueue) update(item *Item, updatedNode Node) {
 	item.node = updatedNode
 	heap.Fix(pq, item.index)
 }
-
-/*
-import (
-	"container/heap"
-)
-type Node struct {
-	world [][]int
-	score int
-}
-
-func main() {
-	items := []Node{
-		Node{world: [][]int{[]int{1, 2, 3}}, score: 3},
-		Node{world: [][]int{[]int{7, 9, 1}}, score: 8},
-		Node{world: [][]int{[]int{0, 1, 7}}, score: 4},
-	}
-	pq := make(PriorityQueue, len(items))
-
-	for i, node := range items {
-		pq[i] = &Item{
-			node:  node,
-			//index: i,
-		}
-	}
-	heap.Init(&pq)
-
-	newItem := &Item{
-		node :Node{world: [][]int{[]int{7, 7, 7}}, score  : 5},
-	}
-	heap.Push(&pq, newItem)
-	for pq.Len() > 0 {
-		item := heap.Pop(&pq).(*Item)
-		fmt.Printf("%v\n", item.node)
-	}
-}
-*/

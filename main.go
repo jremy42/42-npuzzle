@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"flag"
 	"fmt"
+	//"log"
 	"os"
 	"time"
 )
@@ -19,11 +20,14 @@ var evals = []eval{
 	//{"astar_inversion", astar_inv},
 }
 
-var directions = map[byte]moveFx{
-	'U': moveUp,
-	'D': moveDown,
-	'L': moveLeft,
-	'R': moveRight,
+var directions = []struct {
+	name byte
+	fx   moveFx
+}{
+	{'U', moveUp},
+	{'D', moveDown},
+	{'L', moveLeft},
+	{'R', moveRight},
 }
 
 func getNextNodeIndex(queue []Node) int {
@@ -38,102 +42,72 @@ func getNextNodeIndex(queue []Node) int {
 	return ret
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode *Item, seenNodes *map[string]int, posQueue *PriorityQueue, elapsed *[4]time.Duration) *PriorityQueue {
-	for key, fx := range directions {
+func getNextMoves(startPos, goalPos [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int, path []byte, currentNode *Item, seenNodes *map[string]int, posQueue *PriorityQueue, elapsed *[8]time.Duration) {
+	for _, dir := range directions {
 		start := time.Now()
-		ok, nextPos := fx(currentNode.node.world)
+		ok, nextPos := dir.fx(currentNode.node.world)
 		end := time.Now()
 		elapsed[1] += end.Sub(start)
 		if !ok {
 			continue
 		}
+		start = time.Now()
 		score := scoreFx(nextPos, startPos, goalPos, path)
-		nextPath := DeepSliceCopyAndAdd(path, key)
+		nextPath := DeepSliceCopyAndAdd(path, dir.name)
 		nextNode := Node{nextPos, nextPath, score}
+		end = time.Now()
+		elapsed[2] += end.Sub(start)
 		start = time.Now()
 		keyNode := matrixToString(nextPos)
 		seenNodesScore, alreadyExplored := (*seenNodes)[keyNode]
-		//alreadyExplored := posAlreadySeen(seenNodes, nextPos)
 		end = time.Now()
-		elapsed[2] += end.Sub(start)
+		elapsed[3] += end.Sub(start)
 		if !alreadyExplored ||
 			score < seenNodesScore {
 			start = time.Now()
-			//A faire
-			//toAdd := DeepSliceCopyAndAdd(path, key)
-			//A faire
-			//nextPaths = append(nextPaths, toAdd)
 			item := &Item{node: nextNode}
 			heap.Push(posQueue, item)
-			//nextSeen = append(nextSeen, nextNode)
 			(*seenNodes)[keyNode] = score
 			end = time.Now()
-			elapsed[3] += end.Sub(start)
+			elapsed[4] += end.Sub(start)
 		}
 	}
-	return posQueue
 }
 
 func algo(world [][]int, scoreFx func(pos, startPos, goalPos [][]int, path []byte) int) (currentPath []byte, seenNodes map[string]int, tries int, maxSizeQueue int) {
 	goalPos := goal(len(world))
 	startPos := Deep2DSliceCopy(world)
-	//seenNodes = []Node{{startPos, 0}}
-	seenNodes = make(map[string]int, 10000)
+	seenNodes = make(map[string]int, 1000000)
 	seenNodes[matrixToString(startPos)] = 0
-	//posQueue := []Node{{startPos, 0}}
-	posQueue := make(PriorityQueue, 1)
+	posQueue := make(PriorityQueue, 1, 1000000)
 	posQueue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
 	heap.Init(&posQueue)
-	//pathQueue := [][]byte{{}}
 
-	var elapsed [4]time.Duration
-	globalStart := time.Now()
-	for lenqueue := 1; len(posQueue) > 0; lenqueue, tries = len(posQueue), tries + 1{
+	var elapsed [8]time.Duration
+	startAlgo := time.Now()
+	for lenqueue := 1; len(posQueue) > 0; lenqueue, tries = len(posQueue), tries+1 {
 		maxSizeQueue = Max(maxSizeQueue, lenqueue)
 
 		start := time.Now()
-		//nextIndex := getNextNodeIndex(posQueue)
 		currentNode := heap.Pop(&posQueue).(*Item)
 		end := time.Now()
 		elapsed[0] += end.Sub(start)
 
-		//currentNode := posQueue[nextIndex]
-
-		//A rajouter
-		//currentPath = pathQueue[nextIndex]
 		currentPath = currentNode.node.path
-
 		if tries > 0 && tries%100000 == 0 {
-			globalEnd := time.Now()
-			fmt.Printf("Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d\n", globalEnd.Sub(globalStart) , tries/100000, len(currentNode.node.path), currentNode.node.score)
+			fmt.Printf("Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d\n", time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue)
 		}
 
-		//posQueue = append(posQueue[:nextIndex], posQueue[nextIndex+1:]...)
-
-		//pathQueue = append(pathQueue[:nextIndex], pathQueue[nextIndex+1:]...)
-
-		//fmt.Printf("new try %d with score %d\n", tries, currentNode.score)
-		//fmt.Printf("new try %d\n. QueueSize %d\n", tries, len(posQueue))
-		//fmt.Printf("score %d => current try %v\n", currentNode.score, currentNode.world)
-		//fmt.Printf("current path %v\n", currentPath)
-		//time.Sleep(0 * time.Millisecond)
 		if isEqual(goalPos, currentNode.node.world) {
 			fmt.Println("getNexMoves total time :", elapsed[0].String())
 			fmt.Println("time applying moves:", elapsed[1].String())
-			fmt.Println("time finding if node already exists in nodes list:", elapsed[2].String())
-			fmt.Println("time adding node to queues:", elapsed[3].String())
+			fmt.Println("time calculating costs and creating node:", elapsed[2].String())
+			fmt.Println("time finding if node already exists in nodes list:", elapsed[3].String())
+			fmt.Println("time adding node to queues:", elapsed[4].String())
 			return
 		}
-
-		//nextPaths, nextPoses := getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &elapsed)
-		posQueue = *getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &posQueue, &elapsed)
-
-		//fmt.Println("next Paths", nextPaths)
-		//posQueue = append(posQueue, nextPoses...)
-		//pathQueue = append(pathQueue, nextPaths...)
-		//seenNodes = append(seenNodes, nextSeen...)
+		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, &seenNodes, &posQueue, &elapsed)
 	}
-	fmt.Println("tries", tries)
 	return nil, seenNodes, tries, maxSizeQueue
 }
 
@@ -143,11 +117,11 @@ func main() {
 		mapSize   int
 		heuristic string
 	)
-
 	flag.StringVar(&file, "f", "", "usage : -f [filename]")
 	flag.IntVar(&mapSize, "s", 3, "usage : -s [size]")
 	flag.StringVar(&heuristic, "h", "m", "usage : -h m for manhattan or e for euclidean")
 	flag.Parse()
+
 	var board [][]int
 
 	if file != "" {
@@ -159,67 +133,6 @@ func main() {
 		fmt.Println("Invalid Map size")
 		os.Exit(1)
 	}
-
-	/*
-				board = [][]int{
-					{2, 4, 5},
-					{6, 7, 8},
-					{1, 3, 0},
-				}
-
-		/* board = [][]int{
-				{2, 1, 7},
-				{4, 0, 8},
-				{3, 5, 6},
-			} */
-
-	/* 	board = [][]int{
-		{10, 3, 14, 4},
-		{2, 12, 5, 6},
-		{11, 0, 15, 7},
-		{1, 9, 8, 13},
-	} */
-	/*
-		ok1, falseBoard1 := moveRight(goal(len(board)))
-		ok2, falseBoard2 := moveUp(falseBoard1)
-		ok3, falseBoard3 := moveLeft(falseBoard2)
-		ok4, falseBoard4 := moveDown(falseBoard3)
-		if !ok1 || !ok2 || !ok3  || !ok4 {
-			fmt.Println("Init failure")
-			os.Exit(1)
-		}
-		board = falseBoard4
-	*/
-
-	/*
-		board = [][]int{
-			{2, 3, 4, 6},
-			{1, 12, 14, 15},
-			{11, 9, 13, 5},
-			{10, 8, 0, 7},
-		}
-	*/
-	/*
-		board = [][]int{
-			{14, 4, 0, 12, 1},
-			{24, 11, 15, 10, 5},
-			{17, 2, 19, 23, 21},
-			{9, 3, 20, 8, 6},
-			{7, 18, 16, 22, 13},
-		}
-	*/
-
-	/*
-		ok1, falseBoard1 := moveRight(goal(len(board)))
-		ok2, falseBoard2 := moveUp(falseBoard1)
-		ok3, falseBoard3 := moveLeft(falseBoard2)
-		ok4, falseBoard4 := moveDown(falseBoard3)
-		if !ok1 || !ok2 || !ok3  || !ok4 {
-			fmt.Println("Init failure")
-			os.Exit(1)
-		}
-		board = falseBoard4
-	*/
 	if !isSolvable(board) {
 		fmt.Println("Board is not solvable")
 		os.Exit(1)
