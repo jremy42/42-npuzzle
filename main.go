@@ -108,10 +108,14 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 	}
 }
 
+
+//Trouver un moyen de wait si on est pas sur d'avoir la solution optimale :
+// au momen de poper, si on a deja une sol, et que le min des queues est sup a notre sol, on <- end et on quite
 func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int) {
 	goalPos := goal(len(world))
 	startPos := Deep2DSliceCopy(world)
 	var elapsed [8]time.Duration
+	var foundSol *Item
 	startAlgo := time.Now()
 	for {
 		data.mu.Lock()
@@ -128,7 +132,19 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 			//data.mu.Unlock()
 			fmt.Println(index, "Empty queue. Waiting")
 			time.Sleep(1 * time.Millisecond)
-			continue
+			//Check if all is empty, and exit if so
+			data.mu.Lock()
+			totalLen := 0
+			for _, value := range data.posQueue {
+				totalLen += value.Len()
+			}
+			data.mu.Unlock()
+			if totalLen == 0 {
+				fmt.Println("all queues are empty. Leaving")
+				return
+			} else {
+				continue
+			}
 		} else if over {
 			//data.muQueue[index].Unlock()
 			//data.mu.Unlock()
@@ -141,6 +157,14 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 		currentNode := (heap.Pop(data.posQueue[index])).(*Item) // Parfois erreur ????
 		//fmt.Println("Pop [2] : index is : ", index, "len of queue :", len(*data.posQueue[index]))
 		data.muQueue[index].Unlock()
+		if foundSol != nil && currentNode.node.score > foundSol.node.score {
+				data.mu.Lock()
+				data.path = foundSol.node.path
+				data.over = true
+				data.end <- true
+				data.mu.Unlock()
+				return
+		}
 		end := time.Now()
 		elapsed[0] += end.Sub(start)
 
@@ -160,6 +184,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 				return
 			} else {
 				fmt.Println("Found non optimal solution")
+				foundSol = currentNode
 				data.mu.Unlock()
 			}
 		}
@@ -168,17 +193,18 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 }
 
 func checkOptimalSolution(currentNode *Item, data *safeData) bool {
-	bestNodes := make([]*Item, 0, len(data.seenNodes))
+	bestNodes := make([]*Item, 0, len(data.posQueue))
 	for i := range data.posQueue {
 		if data.posQueue[i].Len() > 0 {
 			bestNodes = append(bestNodes, heap.Pop(data.posQueue[i]).(*Item))
-			fmt.Println("best nodes", bestNodes[len(bestNodes) - 1])
+			fmt.Println("best nodes", bestNodes[len(bestNodes)-1])
 		} else {
 			bestNodes = append(bestNodes, nil)
 		}
 	}
+	fmt.Println("current score :", currentNode.node.score)
 	for i := range bestNodes {
-		if bestNodes[i] != nil && bestNodes[i].node.score < currentNode.node.score {
+		if bestNodes[i] != nil && bestNodes[i].node.score <= currentNode.node.score {
 			fmt.Println("current score :", currentNode.node.score, "next score :", bestNodes[i].node.score)
 			for j := range bestNodes {
 				heap.Push(data.posQueue[j], bestNodes[j])
@@ -243,7 +269,7 @@ func main() {
 	for _, eval := range evals {
 		fmt.Println("Now starting with :", eval.name)
 		start := time.Now()
-		workers := 16
+		workers := 4
 		data := initData(board, workers)
 		for i := 0; i < workers; i++ {
 			go algo(board, eval.fx, data, i, workers)
