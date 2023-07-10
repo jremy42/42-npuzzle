@@ -74,6 +74,14 @@ func Max(a, b int) int {
 	}
 }
 
+func Min(a, b int) int {
+	if a >= b {
+		return b
+	} else {
+		return a
+	}
+}
+
 func Abs(a int) int {
 	if a >= 0 {
 		return a

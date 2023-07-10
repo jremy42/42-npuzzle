@@ -26,13 +26,15 @@ type safeData struct {
 	muQueue  []sync.Mutex
 	posQueue []*PriorityQueue
 
-	muSeen       []sync.Mutex
-	seenNodes    []map[string]int
+	muSeen    []sync.Mutex
+	seenNodes []map[string]int
+
 	tries        int
 	maxSizeQueue int
-	path         []byte
-	over         bool
-	end          chan bool
+
+	path []byte
+	over bool
+	end  chan bool
 }
 
 var directions = []struct {
@@ -150,14 +152,41 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 		if isEqual(goalPos, currentNode.node.world) {
 			printTimeInfo(elapsed[:])
 			data.mu.Lock()
-			data.path = currentPath
-			data.over = true
-			data.end <- true
-			data.mu.Unlock()
-			return
+			if checkOptimalSolution(currentNode, data) {
+				data.path = currentPath
+				data.over = true
+				data.end <- true
+				data.mu.Unlock()
+				return
+			} else {
+				fmt.Println("Found non optimal solution")
+				data.mu.Unlock()
+			}
 		}
 		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, elapsed[:], data, index, workers)
 	}
+}
+
+func checkOptimalSolution(currentNode *Item, data *safeData) bool {
+	bestNodes := make([]*Item, 0, len(data.seenNodes))
+	for i := range data.posQueue {
+		if data.posQueue[i].Len() > 0 {
+			bestNodes = append(bestNodes, heap.Pop(data.posQueue[i]).(*Item))
+			fmt.Println("best nodes", bestNodes[len(bestNodes) - 1])
+		} else {
+			bestNodes = append(bestNodes, nil)
+		}
+	}
+	for i := range bestNodes {
+		if bestNodes[i] != nil && bestNodes[i].node.score < currentNode.node.score {
+			fmt.Println("current score :", currentNode.node.score, "next score :", bestNodes[i].node.score)
+			for j := range bestNodes {
+				heap.Push(data.posQueue[j], bestNodes[j])
+			}
+			return false
+		}
+	}
+	return true
 }
 
 func initData(board [][]int, workers int) (data *safeData) {
@@ -214,7 +243,7 @@ func main() {
 	for _, eval := range evals {
 		fmt.Println("Now starting with :", eval.name)
 		start := time.Now()
-		workers := 4
+		workers := 16
 		data := initData(board, workers)
 		for i := 0; i < workers; i++ {
 			go algo(board, eval.fx, data, i, workers)
