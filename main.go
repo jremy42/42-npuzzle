@@ -89,9 +89,11 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 			score < seenNodesScore {
 			start = time.Now()
 			item := &Item{node: nextNode}
-			queueIndex := (index+indexDir)%workers
+			queueIndex := (index + indexDir) % workers
 			data.muQueue[queueIndex].Lock()
+			//fmt.Println("Push [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
 			heap.Push(data.posQueue[queueIndex], item)
+			//fmt.Println("Push [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
 			data.muQueue[queueIndex].Unlock()
 			data.mu.Lock()
 			(data.seenNodes)[keyNode] = score
@@ -115,19 +117,24 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 		data.muQueue[index].Lock()
 		lenqueue := len(*data.posQueue[index])
 		data.maxSizeQueue = Max(data.maxSizeQueue, lenqueue)
-		data.muQueue[index].Unlock()
-		data.mu.Unlock()
 		if lenqueue == 0 {
+			data.muQueue[index].Unlock()
+			data.mu.Unlock()
 			fmt.Println(index, "Empty queue. Waiting")
 			time.Sleep(10 * time.Millisecond)
+			continue
 		} else if over {
+			data.muQueue[index].Unlock()
+			data.mu.Unlock()
 			fmt.Println(index, "End of sim")
 			return
 		}
 		start := time.Now()
-		data.muQueue[index].Lock()
-		currentNode := heap.Pop(data.posQueue[index]).(*Item) // Parfois erreur ????
+		//fmt.Println("Pop : [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
+		currentNode := (heap.Pop(data.posQueue[index])).(*Item) // Parfois erreur ????
+		//fmt.Println("Pop [2] : index is : ", index, "len of queue :", len(*data.posQueue[index]))
 		data.muQueue[index].Unlock()
+		data.mu.Unlock()
 		end := time.Now()
 		elapsed[0] += end.Sub(start)
 
