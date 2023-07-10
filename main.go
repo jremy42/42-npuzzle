@@ -269,7 +269,7 @@ func main() {
 	for _, eval := range evals {
 		fmt.Println("Now starting with :", eval.name)
 		start := time.Now()
-		workers := 4
+		workers := 8
 		data := initData(board, workers)
 		for i := 0; i < workers; i++ {
 			go algo(board, eval.fx, data, i, workers)
