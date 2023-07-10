@@ -21,13 +21,16 @@ var evals = []eval{
 }
 
 type safeData struct {
-	mu           sync.Mutex
-	muQueue      []sync.Mutex
-	posQueue     []*PriorityQueue
-	seenNodes    map[string]int
+	mu sync.Mutex
+
+	muQueue  []sync.Mutex
+	posQueue []*PriorityQueue
+
+	muSeen       []sync.Mutex
+	seenNodes    []map[string]int
 	tries        int
 	maxSizeQueue int
-	path         []byte // solution
+	path         []byte
 	over         bool
 	end          chan bool
 }
@@ -64,7 +67,7 @@ func getNextNodeIndex(queue []Node) int {
 }
 
 func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, elapsed []time.Duration, data *safeData, index int, workers int) {
-	for indexDir, dir := range directions {
+	for _, dir := range directions {
 		start := time.Now()
 		ok, nextPos := dir.fx(currentNode.node.world)
 		end := time.Now()
@@ -79,25 +82,24 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 		end = time.Now()
 		elapsed[2] += end.Sub(start)
 		start = time.Now()
-		keyNode := matrixToString(nextPos)
-		data.mu.Lock()
-		seenNodesScore, alreadyExplored := (data.seenNodes)[keyNode]
-		data.mu.Unlock()
+		keyNode, queueIndex := matrixToString(nextPos, workers)
+		data.muSeen[queueIndex].Lock()
+		seenNodesScore, alreadyExplored := data.seenNodes[queueIndex][keyNode]
+		data.muSeen[queueIndex].Unlock()
 		end = time.Now()
 		elapsed[3] += end.Sub(start)
 		if !alreadyExplored ||
 			score < seenNodesScore {
 			start = time.Now()
 			item := &Item{node: nextNode}
-			queueIndex := (index + indexDir) % workers
 			data.muQueue[queueIndex].Lock()
 			//fmt.Println("Push [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
 			heap.Push(data.posQueue[queueIndex], item)
 			//fmt.Println("Push [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
 			data.muQueue[queueIndex].Unlock()
-			data.mu.Lock()
-			(data.seenNodes)[keyNode] = score
-			data.mu.Unlock()
+			data.muSeen[queueIndex].Lock()
+			data.seenNodes[queueIndex][keyNode] = score
+			data.muSeen[queueIndex].Unlock()
 			end = time.Now()
 			elapsed[4] += end.Sub(start)
 		}
@@ -123,7 +125,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 			//data.muQueue[index].Unlock()
 			//data.mu.Unlock()
 			fmt.Println(index, "Empty queue. Waiting")
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(1 * time.Millisecond)
 			continue
 		} else if over {
 			//data.muQueue[index].Unlock()
@@ -158,13 +160,17 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 	}
 }
 
-func initData(board [][]int, worker int) (data *safeData) {
+func initData(board [][]int, workers int) (data *safeData) {
 	data = &safeData{}
-	data.seenNodes = make(map[string]int, 1000000)
 	startPos := Deep2DSliceCopy(board)
-	data.seenNodes[matrixToString(startPos)] = 0
-	data.posQueue = make([]*PriorityQueue, worker)
-	for i := 0; i < worker; i++ {
+	data.seenNodes = make([]map[string]int, workers)
+	keyNode, _ := matrixToString(startPos, workers)
+	for i := 0; i < workers; i++ {
+		data.seenNodes[i] = make(map[string]int, 1)
+		data.seenNodes[i][keyNode] = 0
+	}
+	data.posQueue = make([]*PriorityQueue, workers)
+	for i := 0; i < workers; i++ {
 
 		queue := make(PriorityQueue, 1, 1000000)
 		queue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
@@ -173,7 +179,8 @@ func initData(board [][]int, worker int) (data *safeData) {
 	}
 	data.end = make(chan bool)
 	data.over = false
-	data.muQueue = make([]sync.Mutex, worker)
+	data.muQueue = make([]sync.Mutex, workers)
+	data.muSeen = make([]sync.Mutex, workers)
 	return
 }
 
@@ -207,7 +214,7 @@ func main() {
 	for _, eval := range evals {
 		fmt.Println("Now starting with :", eval.name)
 		start := time.Now()
-		workers := 8
+		workers := 4
 		data := initData(board, workers)
 		for i := 0; i < workers; i++ {
 			go algo(board, eval.fx, data, i, workers)
