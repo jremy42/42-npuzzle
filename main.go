@@ -116,25 +116,27 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 		over := data.over
 		data.muQueue[index].Lock()
 		lenqueue := len(*data.posQueue[index])
+		data.muQueue[index].Unlock()
 		data.maxSizeQueue = Max(data.maxSizeQueue, lenqueue)
+		data.mu.Unlock()
 		if lenqueue == 0 {
-			data.muQueue[index].Unlock()
-			data.mu.Unlock()
+			//data.muQueue[index].Unlock()
+			//data.mu.Unlock()
 			fmt.Println(index, "Empty queue. Waiting")
 			time.Sleep(10 * time.Millisecond)
 			continue
 		} else if over {
-			data.muQueue[index].Unlock()
-			data.mu.Unlock()
+			//data.muQueue[index].Unlock()
+			//data.mu.Unlock()
 			fmt.Println(index, "End of sim")
 			return
 		}
 		start := time.Now()
+		data.muQueue[index].Lock()
 		//fmt.Println("Pop : [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
 		currentNode := (heap.Pop(data.posQueue[index])).(*Item) // Parfois erreur ????
 		//fmt.Println("Pop [2] : index is : ", index, "len of queue :", len(*data.posQueue[index]))
 		data.muQueue[index].Unlock()
-		data.mu.Unlock()
 		end := time.Now()
 		elapsed[0] += end.Sub(start)
 
@@ -205,7 +207,7 @@ func main() {
 	for _, eval := range evals {
 		fmt.Println("Now starting with :", eval.name)
 		start := time.Now()
-		workers := 4
+		workers := 8
 		data := initData(board, workers)
 		for i := 0; i < workers; i++ {
 			go algo(board, eval.fx, data, i, workers)
