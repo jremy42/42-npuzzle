@@ -68,7 +68,7 @@ func getNextNodeIndex(queue []Node) int {
 	return ret
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, elapsed []time.Duration, data *safeData, index int, workers int) {
+func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, elapsed []time.Duration, data *safeData, index int, workers int, seenNodeMap int) {
 	for _, dir := range directions {
 		start := time.Now()
 		ok, nextPos := dir.fx(currentNode.node.world)
@@ -84,10 +84,10 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 		end = time.Now()
 		elapsed[2] += end.Sub(start)
 		start = time.Now()
-		keyNode, queueIndex := matrixToString(nextPos, workers)
-		data.muSeen[queueIndex].Lock()
-		seenNodesScore, alreadyExplored := data.seenNodes[queueIndex][keyNode]
-		data.muSeen[queueIndex].Unlock()
+		keyNode, queueIndex, seenNodeIndex := matrixToString(nextPos, workers, seenNodeMap)
+		data.muSeen[seenNodeIndex].Lock()
+		seenNodesScore, alreadyExplored := data.seenNodes[seenNodeIndex][keyNode]
+		data.muSeen[seenNodeIndex].Unlock()
 		end = time.Now()
 		elapsed[3] += end.Sub(start)
 		if !alreadyExplored ||
@@ -99,9 +99,9 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 			heap.Push(data.posQueue[queueIndex], item)
 			//fmt.Println("Push [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
 			data.muQueue[queueIndex].Unlock()
-			data.muSeen[queueIndex].Lock()
-			data.seenNodes[queueIndex][keyNode] = score
-			data.muSeen[queueIndex].Unlock()
+			data.muSeen[seenNodeIndex].Lock()
+			data.seenNodes[seenNodeIndex][keyNode] = score
+			data.muSeen[seenNodeIndex].Unlock()
 			end = time.Now()
 			elapsed[4] += end.Sub(start)
 		}
@@ -111,7 +111,7 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 
 //Trouver un moyen de wait si on est pas sur d'avoir la solution optimale :
 // au momen de poper, si on a deja une sol, et que le min des queues est sup a notre sol, on <- end et on quite
-func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int) {
+func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int, seenNodesMap int) {
 	goalPos := goal(len(world))
 	startPos := Deep2DSliceCopy(world)
 	var elapsed [8]time.Duration
@@ -188,7 +188,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int)
 				data.mu.Unlock()
 			}
 		}
-		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, elapsed[:], data, index, workers)
+		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, elapsed[:], data, index, workers, seenNodesMap)
 	}
 }
 
@@ -215,13 +215,13 @@ func checkOptimalSolution(currentNode *Item, data *safeData) bool {
 	return true
 }
 
-func initData(board [][]int, workers int) (data *safeData) {
+func initData(board [][]int, workers int, seenNodesMap int) (data *safeData) {
 	data = &safeData{}
 	startPos := Deep2DSliceCopy(board)
-	data.seenNodes = make([]map[string]int, workers)
-	keyNode, _ := matrixToString(startPos, workers)
-	for i := 0; i < workers; i++ {
-		data.seenNodes[i] = make(map[string]int, 1)
+	data.seenNodes = make([]map[string]int, seenNodesMap)
+	keyNode, _ , _:= matrixToString(startPos, workers, seenNodesMap)
+	for i := 0; i < seenNodesMap; i++ {
+		data.seenNodes[i] = make(map[string]int, 1000000)
 		data.seenNodes[i][keyNode] = 0
 	}
 	data.posQueue = make([]*PriorityQueue, workers)
@@ -235,7 +235,7 @@ func initData(board [][]int, workers int) (data *safeData) {
 	data.end = make(chan bool)
 	data.over = false
 	data.muQueue = make([]sync.Mutex, workers)
-	data.muSeen = make([]sync.Mutex, workers)
+	data.muSeen = make([]sync.Mutex, seenNodesMap)
 	return
 }
 
@@ -270,9 +270,10 @@ func main() {
 		fmt.Println("Now starting with :", eval.name)
 		start := time.Now()
 		workers := 8
-		data := initData(board, workers)
+		seenNodeMap := 32
+		data := initData(board, workers, seenNodeMap)
 		for i := 0; i < workers; i++ {
-			go algo(board, eval.fx, data, i, workers)
+			go algo(board, eval.fx, data, i, workers, seenNodeMap)
 		}
 		<-data.end
 		end := time.Now()

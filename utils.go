@@ -113,7 +113,7 @@ func matrixToString2(matrix [][]int) string {
 
 
 //3224
-func matrixToString(matrix [][]int, worker int) (key string, queueIndex int){
+func matrixToString(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int){
 
 	results := make([]byte, 100)
 	size := len(matrix)
@@ -123,6 +123,7 @@ func matrixToString(matrix [][]int, worker int) (key string, queueIndex int){
 
 		for j := 0; j < size; j++ {
 			queueIndex += matrix[i][j] * i * j
+			seenNodeIndex += matrix[i][j] * i * j
 			results[spot]  = byte(matrix[i][j] / 10)
 			results[spot + 1]  = byte(matrix[i][j] % 10)
 			results[spot + 2]  = '.'
@@ -130,5 +131,6 @@ func matrixToString(matrix [][]int, worker int) (key string, queueIndex int){
 		}
 	}
 	queueIndex %= worker
-	return string(results), queueIndex
+	seenNodeIndex %= seenNodeMap
+	return string(results), queueIndex, seenNodeIndex
 }
