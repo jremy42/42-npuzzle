@@ -47,7 +47,10 @@ var directions = []struct {
 	{'R', moveRight},
 }
 
-func terminateSearch(data *safeData, path []byte) {
+func terminateSearch(data *safeData, solutionPath []byte) {
+	data.path = solutionPath
+	data.over = true
+	data.end <- true
 }
 
 func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodeMap int) {
@@ -75,7 +78,6 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 		}
 	}
 }
-
 
 func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int, seenNodesMap int) {
 	goalPos := goal(len(world))
@@ -116,12 +118,10 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int,
 		currentNode := (heap.Pop(data.posQueue[index])).(*Item) // Parfois erreur ????
 		data.muQueue[index].Unlock()
 		if foundSol != nil && currentNode.node.score > foundSol.node.score {
-				data.mu.Lock()
-				data.path = foundSol.node.path
-				data.over = true
-				data.end <- true
-				data.mu.Unlock()
-				return
+			data.mu.Lock()
+			terminateSearch(data, foundSol.node.path)
+			data.mu.Unlock()
+			return
 		}
 
 		currentPath := currentNode.node.path
@@ -132,9 +132,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int,
 		if isEqual(goalPos, currentNode.node.world) {
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
-				data.path = currentPath
-				data.over = true
-				data.end <- true
+				terminateSearch(data, currentNode.node.path)
 				data.mu.Unlock()
 				return
 			} else {
@@ -174,7 +172,7 @@ func initData(board [][]int, workers int, seenNodesMap int) (data *safeData) {
 	data = &safeData{}
 	startPos := Deep2DSliceCopy(board)
 	data.seenNodes = make([]map[string]int, seenNodesMap)
-	keyNode, _ , _:= matrixToString(startPos, workers, seenNodesMap)
+	keyNode, _, _ := matrixToString(startPos, workers, seenNodesMap)
 	for i := 0; i < seenNodesMap; i++ {
 		data.seenNodes[i] = make(map[string]int, 1000000)
 		data.seenNodes[i][keyNode] = 0
