@@ -5,7 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -170,20 +172,27 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 func checkOptimalSolution(currentNode *Item, data *safeData) bool {
 	bestNodes := make([]*Item, len(data.posQueue))
 	for i := range data.posQueue {
+		data.muQueue[i].Lock()
 		if data.posQueue[i].Len() > 0 {
 			bestNodes[i] = heap.Pop(data.posQueue[i]).(*Item)
 		} else {
 			bestNodes[i] = nil
 		}
+		data.muQueue[i].Unlock()
 	}
 	for i := range bestNodes {
 		if bestNodes[i] != nil && bestNodes[i].node.score <= currentNode.node.score {
 			for j := range bestNodes {
-				heap.Push(data.posQueue[j], bestNodes[j])
+				data.muQueue[j].Lock()
+				if bestNodes[j] != nil {
+					heap.Push(data.posQueue[j], bestNodes[j])
+				}
+				data.muQueue[j].Unlock()
 			}
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -193,13 +202,13 @@ func initData(board [][]int, workers int, seenNodesSplit int) (data *safeData) {
 	data.seenNodes = make([]map[string]int, seenNodesSplit)
 	keyNode, _, _ := matrixToStringSelector(startPos, workers, seenNodesSplit)
 	for i := 0; i < seenNodesSplit; i++ {
-		data.seenNodes[i] = make(map[string]int, 1000000)
+		data.seenNodes[i] = make(map[string]int, 1000)
 		data.seenNodes[i][keyNode] = 0
 	}
 	data.posQueue = make([]*PriorityQueue, workers)
 	for i := 0; i < workers; i++ {
 
-		queue := make(PriorityQueue, 1, 1000000)
+		queue := make(PriorityQueue, 1, 1000)
 		queue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
 		data.posQueue[i] = &queue
 		heap.Init(data.posQueue[i])
@@ -270,16 +279,17 @@ func main() {
 		os.Exit(1)
 	}
 	if !isSolvable(board) {
-		fmt.Println("Board is not solvable")
-		os.Exit(1)
+		displayBoard(board, []byte{}, eval.name, "", 0, 0, workers, seenNodesSplit, speedDisplay)
+		os.Exit(0)
 	}
 	fmt.Println("Board is :", board)
 
 	fmt.Println("Now starting with :", eval.name)
 	start := time.Now()
-	//workers := 8
-	//seenNodeSplit := 16
 	data := initData(board, workers, seenNodesSplit)
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT, syscall.SIGQUIT, syscall.SIGKILL)
+
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodeSplit int) {
@@ -288,7 +298,13 @@ func main() {
 			wg.Done()
 		}(board, eval.fx, data, i, workers, seenNodesSplit)
 	}
-	<-data.end
+	select {
+	case <-sigc:
+		fmt.Println("Received signal. Leaving")
+		os.Exit(0)
+	case <-data.end:
+		fmt.Println("find solution")
+	}
 	wg.Wait()
 
 	end := time.Now()
@@ -302,7 +318,7 @@ func main() {
 
 		fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
 		fmt.Printf("len of solution %v, %d time complexity / tries, %d space complexity\n", len(data.path), data.tries, openSetComplexity)
-		displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, openSetComplexity, workers, seenNodesSplit, speedDisplay)
+		//displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, openSetComplexity, workers, seenNodesSplit, speedDisplay)
 
 		fmt.Println(string(data.path))
 	} else {

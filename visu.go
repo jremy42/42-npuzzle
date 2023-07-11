@@ -34,17 +34,26 @@ func displayBoard(board [][]int, path []byte, elvalName string, times string, tr
 	}
 	defer ui.Close()
 	table := createTable(board)
-	texte := fmt.Sprintf(
-		`Success with : %v in %v !
+	rec := table.GetRect()
+	texte := ""
+	//lenText := 0
+	if len(path) == 0 {
+		texte = fmt.Sprintln("this board is not solvable ")
+		//lenText = len(texte) * 2
+	} else {
+		texte = fmt.Sprintf(
+			`Success with : %v in %v !
 	len of solution : %v
 	time complexity / tries : %d
 	space complexity : %d
 	worker : %d
 	close set split : %d
 	`, elvalName, times, len(path), tries, openSetComplexity, workers, closeSetSplit)
+		//lenText = 60
+	}
 	par := widgets.NewParagraph()
 	par.Text = texte
-	par.SetRect(len(board)*6, 0, len(texte), len(board)*2+1)
+	par.SetRect(0, rec.Max.Y, rec.Max.Y+30, rec.Max.Y+10)
 	ui.Render(par)
 	ui.Render(table)
 	uiEvents := ui.PollEvents()
