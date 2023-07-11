@@ -47,74 +47,39 @@ var directions = []struct {
 	{'R', moveRight},
 }
 
-func printTimeInfo(elapsed []time.Duration) {
-
-	fmt.Println("time to get next node to explore from Queue :", elapsed[0].String())
-	fmt.Println("time applying moves:", elapsed[1].String())
-	fmt.Println("time calculating costs and creating node:", elapsed[2].String())
-	fmt.Println("time finding if node already exists in nodes list:", elapsed[3].String())
-	fmt.Println("time adding node to queues:", elapsed[4].String())
+func terminateSearch(data *safeData, path []byte) {
 }
 
-func getNextNodeIndex(queue []Node) int {
-	retScore := queue[0].score
-	ret := 0
-	for index, value := range queue {
-		if value.score < retScore {
-			retScore = value.score
-			ret = index
-		}
-	}
-	return ret
-}
-
-func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, elapsed []time.Duration, data *safeData, index int, workers int, seenNodeMap int) {
+func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodeMap int) {
 	for _, dir := range directions {
-		start := time.Now()
 		ok, nextPos := dir.fx(currentNode.node.world)
-		end := time.Now()
-		elapsed[1] += end.Sub(start)
 		if !ok {
 			continue
 		}
-		start = time.Now()
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextPath := DeepSliceCopyAndAdd(path, dir.name)
 		nextNode := Node{nextPos, nextPath, score}
-		end = time.Now()
-		elapsed[2] += end.Sub(start)
-		start = time.Now()
 		keyNode, queueIndex, seenNodeIndex := matrixToString(nextPos, workers, seenNodeMap)
 		data.muSeen[seenNodeIndex].Lock()
 		seenNodesScore, alreadyExplored := data.seenNodes[seenNodeIndex][keyNode]
 		data.muSeen[seenNodeIndex].Unlock()
-		end = time.Now()
-		elapsed[3] += end.Sub(start)
 		if !alreadyExplored ||
 			score < seenNodesScore {
-			start = time.Now()
 			item := &Item{node: nextNode}
 			data.muQueue[queueIndex].Lock()
-			//fmt.Println("Push [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
 			heap.Push(data.posQueue[queueIndex], item)
-			//fmt.Println("Push [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
 			data.muQueue[queueIndex].Unlock()
 			data.muSeen[seenNodeIndex].Lock()
 			data.seenNodes[seenNodeIndex][keyNode] = score
 			data.muSeen[seenNodeIndex].Unlock()
-			end = time.Now()
-			elapsed[4] += end.Sub(start)
 		}
 	}
 }
 
 
-//Trouver un moyen de wait si on est pas sur d'avoir la solution optimale :
-// au momen de poper, si on a deja une sol, et que le min des queues est sup a notre sol, on <- end et on quite
 func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int, seenNodesMap int) {
 	goalPos := goal(len(world))
 	startPos := Deep2DSliceCopy(world)
-	var elapsed [8]time.Duration
 	var foundSol *Item
 	startAlgo := time.Now()
 	for {
@@ -128,8 +93,6 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int,
 		data.maxSizeQueue = Max(data.maxSizeQueue, lenqueue)
 		data.mu.Unlock()
 		if lenqueue == 0 {
-			//data.muQueue[index].Unlock()
-			//data.mu.Unlock()
 			fmt.Println(index, "Empty queue. Waiting")
 			time.Sleep(1 * time.Millisecond)
 			//Check if all is empty, and exit if so
@@ -146,16 +109,11 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int,
 				continue
 			}
 		} else if over {
-			//data.muQueue[index].Unlock()
-			//data.mu.Unlock()
 			fmt.Println(index, "End of sim")
 			return
 		}
-		start := time.Now()
 		data.muQueue[index].Lock()
-		//fmt.Println("Pop : [1] :index is : ", index, "len of queue :", len(*data.posQueue[index]))
 		currentNode := (heap.Pop(data.posQueue[index])).(*Item) // Parfois erreur ????
-		//fmt.Println("Pop [2] : index is : ", index, "len of queue :", len(*data.posQueue[index]))
 		data.muQueue[index].Unlock()
 		if foundSol != nil && currentNode.node.score > foundSol.node.score {
 				data.mu.Lock()
@@ -165,8 +123,6 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int,
 				data.mu.Unlock()
 				return
 		}
-		end := time.Now()
-		elapsed[0] += end.Sub(start)
 
 		currentPath := currentNode.node.path
 		if tries > 0 && tries%100000 == 0 {
@@ -174,7 +130,6 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int,
 		}
 
 		if isEqual(goalPos, currentNode.node.world) {
-			printTimeInfo(elapsed[:])
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
 				data.path = currentPath
@@ -188,7 +143,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, index int, workers int,
 				data.mu.Unlock()
 			}
 		}
-		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, elapsed[:], data, index, workers, seenNodesMap)
+		getNextMoves(startPos, goalPos, scoreFx, currentPath, currentNode, data, index, workers, seenNodesMap)
 	}
 }
 

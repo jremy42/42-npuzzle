@@ -29,8 +29,6 @@ func gridGenerator(mapSize int) (board [][]int) {
 	return board
 }
 
-// j <=> y
-// x <=> i
 func goal(mapSize int) (goal [][]int) {
 
 	goal = make([][]int, mapSize)
