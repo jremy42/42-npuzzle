@@ -111,11 +111,18 @@ func matrixToString2(matrix [][]int) string {
 	return results
 }
 
+func matrixToStringSelector(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
+	if len(matrix) < 10 {
+		return matrixToString(matrix, worker, seenNodeMap)
+	} else {
+		return matrixToStringNoOpti(matrix, worker, seenNodeMap)
+	}
+}
 
 //3224
-func matrixToString(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int){
+func matrixToString(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
 
-	results := make([]byte, 100)
+	results := make([]byte, len(matrix)*len(matrix)*4)
 	size := len(matrix)
 
 	spot := 0
@@ -124,13 +131,32 @@ func matrixToString(matrix [][]int, worker int, seenNodeMap int) (key string, qu
 		for j := 0; j < size; j++ {
 			queueIndex += matrix[i][j] * i * j
 			seenNodeIndex += matrix[i][j] * i * j
-			results[spot]  = byte(matrix[i][j] / 10)
-			results[spot + 1]  = byte(matrix[i][j] % 10)
-			results[spot + 2]  = '.'
+			results[spot] = byte(matrix[i][j] / 10)
+			results[spot+1] = byte(matrix[i][j] % 10)
+			results[spot+2] = '.'
 			spot += 3
 		}
 	}
 	queueIndex %= worker
 	seenNodeIndex %= seenNodeMap
 	return string(results), queueIndex, seenNodeIndex
+}
+
+func matrixToStringNoOpti(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
+
+	results := ""
+	size := len(matrix)
+
+	for i := 0; i < size; i++ {
+
+		for j := 0; j < size; j++ {
+			queueIndex += matrix[i][j] * i * j
+			seenNodeIndex += matrix[i][j] * i * j
+			results += strconv.Itoa(matrix[i][j]) + "."
+
+		}
+	}
+	queueIndex %= worker
+	seenNodeIndex %= seenNodeMap
+	return results, queueIndex, seenNodeIndex
 }

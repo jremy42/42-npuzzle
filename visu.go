@@ -28,39 +28,51 @@ func convertBoard(board [][]int) [][]string {
 
 }
 
-func displayBoard(board [][]int, path []byte, seenPos []Node, elvalName string, tries, sizeMax int) {
+func displayBoard(board [][]int, path []byte, elvalName string, times string, tries, openSetComplexity, workers, closeSetSplit, speedDisplay int) {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
 	table := createTable(board)
-	texte := fmt.Sprintf("Success with %v \n\nlen of solution %v, %d pos seen, %d tries, %d space complexity\n", elvalName, len(path), len(seenPos), tries, sizeMax)
+	texte := fmt.Sprintf(
+		`Success with : %v in %v !
+	len of solution : %v
+	time complexity / tries : %d
+	space complexity : %d
+	worker : %d
+	close set split : %d
+	`, elvalName, times, len(path), tries, openSetComplexity, workers, closeSetSplit)
 	par := widgets.NewParagraph()
 	par.Text = texte
-	par.SetRect(len(board)*6, 0, 65, 7)
+	par.SetRect(len(board)*6, 0, len(texte), len(board)*2+1)
 	ui.Render(par)
 	ui.Render(table)
+	uiEvents := ui.PollEvents()
 
 	for i := 0; i < len(path); i++ {
-		switch path[i] {
+		select {
+		case <-uiEvents:
+			return
+		default:
+			switch path[i] {
+			case 'U':
+				_, board = moveUp(board)
+			case 'D':
+				_, board = moveDown(board)
+			case 'L':
+				_, board = moveLeft(board)
+			case 'R':
+				_, board = moveRight(board)
+			}
+			//fmt.Println(string(path[i]))
+			time.Sleep(time.Duration(speedDisplay) * time.Millisecond)
+			table.Rows = convertBoard(board)
+			ui.Render(table)
 
-		case 'U':
-			_, board = moveUp(board)
-		case 'D':
-			_, board = moveDown(board)
-		case 'L':
-			_, board = moveLeft(board)
-		case 'R':
-			_, board = moveRight(board)
 		}
-		//fmt.Println(string(path[i]))
-		time.Sleep(500 * time.Millisecond)
-		table.Rows = convertBoard(board)
-		ui.Render(table)
+		//time.Sleep(5000 * time.Millisecond)
 	}
-	time.Sleep(2000 * time.Millisecond)
-	//uiEvents := ui.PollEvents()
-	//<-uiEvents
+	<-uiEvents
 }
 
 func playBoard(board [][]int) bool {
