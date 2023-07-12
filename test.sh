@@ -5,7 +5,7 @@ ITER=0
 
 while [ $RES -eq 0 ]
 do
-    python npuzzle-gen.py -s $SIZE -i 10  > test.txt && go run . -w 8 -ss 32 -f test.txt
+    python npuzzle-gen.py -s $SIZE -i 10  > test.txt && go run . -w 8 -ss 32 -f test.txt -no-ui
     if [ $? -ne 0 ]
     then
         echo "test failed"
