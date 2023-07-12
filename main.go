@@ -35,7 +35,8 @@ type safeData struct {
 
 	path []byte
 	over bool
-	end  chan bool
+	win bool
+	//end  chan bool
 }
 
 var directions = []struct {
@@ -51,10 +52,10 @@ var directions = []struct {
 func terminateSearch(data *safeData, solutionPath []byte) {
 	data.path = solutionPath
 	data.over = true
-	data.end <- true
+	data.win = true
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int) {
+func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
 	for _, dir := range directions {
 		ok, nextPos := dir.fx(currentNode.node.world)
 		if !ok {
@@ -70,9 +71,11 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 		if !alreadyExplored ||
 			score < seenNodesScore {
 			item := &Item{node: nextNode}
-			data.muQueue[queueIndex].Lock()
-			heap.Push(data.posQueue[queueIndex], item)
-			data.muQueue[queueIndex].Unlock()
+			if score < maxScore {
+				data.muQueue[queueIndex].Lock()
+				heap.Push(data.posQueue[queueIndex], item)
+				data.muQueue[queueIndex].Unlock()
+			}
 			data.muSeen[seenNodeIndex].Lock()
 			data.seenNodes[seenNodeIndex][keyNode] = score
 			data.muSeen[seenNodeIndex].Unlock()
@@ -125,7 +128,7 @@ func getNextNode(data *safeData, workerIndex int) (currentNode *Item) {
 	return
 }
 
-func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, workers int, seenNodesSplit int) {
+func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, workers int, seenNodesSplit int, maxScore int) {
 	goalPos := goal(len(world))
 	startPos := Deep2DSliceCopy(world)
 	var foundSol *Item
@@ -137,10 +140,9 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 		}
 		if lenqueue == 0 {
 			fmt.Println(workerIndex, "Empty queue. Waiting")
-			time.Sleep(1 * time.Millisecond)
 			//Check if all is empty, and exit if so
 			if noMoreNodesToExplore(data) {
-				fmt.Println("Leaving")
+				fmt.Println("Leaving : no more nodes to explore")
 				return
 			}
 			continue
@@ -165,7 +167,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 				data.mu.Unlock()
 			}
 		}
-		getNextMoves(startPos, goalPos, scoreFx, currentNode.node.path, currentNode, data, workerIndex, workers, seenNodesSplit)
+		getNextMoves(startPos, goalPos, scoreFx, currentNode.node.path, currentNode, data, workerIndex, workers, seenNodesSplit, maxScore)
 	}
 }
 
@@ -213,8 +215,9 @@ func initData(board [][]int, workers int, seenNodesSplit int) (data *safeData) {
 		data.posQueue[i] = &queue
 		heap.Init(data.posQueue[i])
 	}
-	data.end = make(chan bool)
+	//data.end = make(chan bool)
 	data.over = false
+	data.win = false
 	data.muQueue = make([]sync.Mutex, workers)
 	data.muSeen = make([]sync.Mutex, seenNodesSplit)
 	data.maxSizeQueue = make([]int, workers)
@@ -266,7 +269,6 @@ func main() {
 	flag.Parse()
 
 	var board [][]int
-	var wg sync.WaitGroup
 	eval := checkFlags(workers, seenNodesSplit, heuristic)
 
 	if file != "" {
@@ -287,37 +289,49 @@ func main() {
 	fmt.Println("Now starting with :", eval.name)
 	start := time.Now()
 	data := initData(board, workers, seenNodesSplit)
+	maxScore := eval.fx(board, board, goal(len(board)), []byte{}) + 1
+	//maxScore |= (1 << 31 - 1)
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT, syscall.SIGQUIT, syscall.SIGKILL)
 
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodeSplit int) {
+	var wg sync.WaitGroup
+	fmt.Println("Before iteration")
+	Iteration :
+	for maxScore < 1<<31 {
+		fmt.Println("score is now :", maxScore)
+		for i := 0; i < workers; i++ {
+			wg.Add(1)
+			go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodeSplit int, maxScore int) {
 
-			algo(board, evalfx, data, i, workers, seenNodeSplit)
-			wg.Done()
-		}(board, eval.fx, data, i, workers, seenNodesSplit)
+				algo(board, evalfx, data, i, workers, seenNodeSplit, maxScore)
+				wg.Done()
+				fmt.Println("thread :", i, "returning")
+			}(board, eval.fx, data, i, workers, seenNodesSplit, maxScore)
+		}
+		wg.Wait()
+		switch data.win {
+		case true :
+			fmt.Println("Found a solution")
+			break Iteration
+		default:
+			fmt.Println("Increasing score")
+			time.Sleep(500 * time.Millisecond)
+			data = initData(board, workers, seenNodesSplit)
+			maxScore++
+		}
 	}
-	select {
-	case <-sigc:
-		fmt.Println("Received signal. Leaving")
-		os.Exit(0)
-	case <-data.end:
-		fmt.Println("find solution")
-	}
-	wg.Wait()
+	fmt.Println("after iteration")
 
 	end := time.Now()
 	elapsed := end.Sub(start)
 	if data.path != nil {
-
-		openSetComplexity := 0
+		closedSetComplexity := 0
 		for _, value := range data.seenNodes {
-			openSetComplexity += len(value)
+			closedSetComplexity += len(value)
 		}
 
 		fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
-		fmt.Printf("len of solution %v, %d time complexity / tries, %d space complexity\n", len(data.path), data.tries, openSetComplexity)
+		fmt.Printf("len of solution %v, %d time complexity / tries, %d space complexity\n", len(data.path), data.tries, closedSetComplexity)
 		//displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, openSetComplexity, workers, seenNodesSplit, speedDisplay)
 
 		fmt.Println(string(data.path))
