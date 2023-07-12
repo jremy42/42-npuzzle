@@ -33,6 +33,18 @@ func ParseInput(file *os.File) (size int, board [][]int) {
 	return size, board
 }
 
+func alreadyInArray(array []int, num int) bool {
+	if len(array) == 0 {
+		return false
+	}
+	for i := 1; i < len(array); i++ {
+		if array[i] == num {
+			return true
+		}
+	}
+	return false
+}
+
 func readInputArray(scanner *bufio.Scanner) []int {
 	inputArray := make([]int, 0, 100)
 
@@ -51,8 +63,8 @@ func readInputArray(scanner *bufio.Scanner) []int {
 		words := strings.Fields(line)
 		for _, word := range words {
 			num, err := strconv.Atoi(word)
-			if err != nil {
-				fmt.Println("Error parsing input")
+			if err != nil || num < 0 || alreadyInArray(inputArray, num) {
+				fmt.Println("Error parsing input 1")
 				os.Exit(1)
 			}
 			inputArray = append(inputArray, num)
@@ -63,6 +75,10 @@ func readInputArray(scanner *bufio.Scanner) []int {
 }
 
 func extractSize(inputArray []int) int {
+	if len(inputArray) == 0 {
+		fmt.Println("Error parsing input")
+		os.Exit(1)
+	}
 	size := inputArray[0]
 	if size*size != len(inputArray)-1 {
 		fmt.Println("Error parsing input")
