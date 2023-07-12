@@ -101,7 +101,7 @@ func TestMatrixToString(t *testing.T) {
 		{[][]int{{1, 2, 3, 4}, {12, 13, 14, 5}, {11, 0, 15, 6}, {10, 9, 8, 7}}, "1.2.3.4.12.13.14.5.11.0.15.6.10.9.8.7."},
 	}
 	for _, test := range test {
-		if got := matrixToString(test.matrix); got != test.want {
+		if got, _, _ := matrixToString(test.matrix, 1, 1); got != test.want {
 			t.Errorf("matrixTo(%v) = %v", test.matrix, got)
 		}
 	}
