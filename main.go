@@ -36,6 +36,7 @@ type safeData struct {
 	path []byte
 	over bool
 	win bool
+	winScore int
 	//end  chan bool
 }
 
@@ -49,10 +50,11 @@ var directions = []struct {
 	{'R', moveRight},
 }
 
-func terminateSearch(data *safeData, solutionPath []byte) {
+func terminateSearch(data *safeData, solutionPath []byte, score int) {
 	data.path = solutionPath
 	data.over = true
 	data.win = true
+	data.winScore = score
 }
 
 func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
@@ -150,7 +152,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 		currentNode := getNextNode(data, workerIndex)
 		if foundSol != nil && currentNode.node.score > foundSol.node.score {
 			data.mu.Lock()
-			terminateSearch(data, foundSol.node.path)
+			terminateSearch(data, foundSol.node.path, currentNode.node.score)
 			data.mu.Unlock()
 			return
 		}
@@ -158,7 +160,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 		if isEqual(goalPos, currentNode.node.world) {
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
-				terminateSearch(data, currentNode.node.path)
+				terminateSearch(data, currentNode.node.path, currentNode.node.score)
 				data.mu.Unlock()
 				return
 			} else {
@@ -315,7 +317,6 @@ func main() {
 			break Iteration
 		default:
 			fmt.Println("Increasing score")
-			time.Sleep(500 * time.Millisecond)
 			data = initData(board, workers, seenNodesSplit)
 			maxScore++
 		}
@@ -331,7 +332,7 @@ func main() {
 		}
 
 		fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
-		fmt.Printf("len of solution %v, %d time complexity / tries, %d space complexity\n", len(data.path), data.tries, closedSetComplexity)
+		fmt.Printf("len of solution %v, %d time complexity / tries, %d space complexity, score : %d\n", len(data.path), data.tries, closedSetComplexity, data.winScore)
 		//displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, openSetComplexity, workers, seenNodesSplit, speedDisplay)
 
 		fmt.Println(string(data.path))
