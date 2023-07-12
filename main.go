@@ -33,10 +33,11 @@ type safeData struct {
 	tries        int
 	maxSizeQueue []int
 
-	path []byte
-	over bool
-	win bool
+	path     []byte
+	over     bool
+	win      bool
 	winScore int
+	idle     int
 	//end  chan bool
 }
 
@@ -88,8 +89,11 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 func noMoreNodesToExplore(data *safeData) bool {
 	data.mu.Lock()
 	totalLen := 0
-	for _, value := range data.posQueue {
-		totalLen += value.Len()
+	for i := range data.posQueue {
+		data.muQueue[i].Lock()
+		length := data.posQueue[i].Len()
+		totalLen += length
+		data.muQueue[i].Unlock()
 	}
 	data.mu.Unlock()
 	if totalLen == 0 {
@@ -100,12 +104,13 @@ func noMoreNodesToExplore(data *safeData) bool {
 	}
 }
 
-func refreshData(data *safeData, workerIndex int) (over bool, tries, lenqueue int) {
+func refreshData(data *safeData, workerIndex int) (over bool, tries, lenqueue int, idle int) {
 	data.mu.Lock()
 
 	data.tries++
 	tries = data.tries
 	over = data.over
+	idle = data.idle
 	data.mu.Unlock()
 	data.muQueue[workerIndex].Lock()
 	lenqueue = len(*data.posQueue[workerIndex])
@@ -118,7 +123,7 @@ func refreshData(data *safeData, workerIndex int) (over bool, tries, lenqueue in
 func printInfo(workerIndex int, tries int, currentNode *Item, startAlgo time.Time, lenqueue int) {
 
 	if tries > 0 && tries%100000 == 0 {
-		fmt.Printf("[%d] Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d\n", workerIndex, time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue)
+		fmt.Printf("[%2d] Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d\n", workerIndex, time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue)
 	}
 
 }
@@ -135,24 +140,36 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 	startPos := Deep2DSliceCopy(world)
 	var foundSol *Item
 	startAlgo := time.Now()
+	isIdle := false
 	for {
-		over, tries, lenqueue := refreshData(data, workerIndex)
+		over, tries, lenqueue, idle := refreshData(data, workerIndex)
 		if over {
+			fmt.Printf("[%2d] - Someone ended sim. Leaving now\n", workerIndex)
 			return
 		}
+		if idle >= workers {
+			fmt.Printf("[%2d] - Everyone is idle\n", workerIndex)
+			return
+		}
+		if isIdle && lenqueue > 0 {
+			isIdle = false
+			data.mu.Lock()
+			data.idle--
+			data.mu.Unlock()
+		}
 		if lenqueue == 0 {
-			fmt.Println(workerIndex, "Empty queue. Waiting")
-			//Check if all is empty, and exit if so
-			if noMoreNodesToExplore(data) {
-				fmt.Println("Leaving : no more nodes to explore")
-				return
+			if !isIdle {
+				data.mu.Lock()
+				data.idle++
+				data.mu.Unlock()
+				isIdle = true
 			}
 			continue
 		}
 		currentNode := getNextNode(data, workerIndex)
 		if foundSol != nil && currentNode.node.score > foundSol.node.score {
 			data.mu.Lock()
-			terminateSearch(data, foundSol.node.path, currentNode.node.score)
+			terminateSearch(data, foundSol.node.path, foundSol.node.score)
 			data.mu.Unlock()
 			return
 		}
@@ -160,11 +177,12 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 		if isEqual(goalPos, currentNode.node.world) {
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
+				fmt.Printf("\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
 				terminateSearch(data, currentNode.node.path, currentNode.node.score)
 				data.mu.Unlock()
 				return
 			} else {
-				fmt.Println("Found non optimal solution")
+				fmt.Printf("\x1b[33m[%2d] - Found a NON optimal solution\n\x1b[0m", workerIndex)
 				foundSol = currentNode
 				data.mu.Unlock()
 			}
@@ -223,6 +241,7 @@ func initData(board [][]int, workers int, seenNodesSplit int) (data *safeData) {
 	data.muQueue = make([]sync.Mutex, workers)
 	data.muSeen = make([]sync.Mutex, seenNodesSplit)
 	data.maxSizeQueue = make([]int, workers)
+	data.idle = 0
 	return
 }
 
@@ -253,6 +272,7 @@ func main() {
 		workers        int
 		seenNodesSplit int
 		speedDisplay   int
+		iterativeDepth bool
 	)
 	flag.StringVar(&file, "f", "", "usage : -f [filename]")
 	flag.IntVar(&mapSize, "s", 3, "usage : -s [size]")
@@ -268,6 +288,7 @@ func main() {
 	flag.IntVar(&workers, "w", 1, "usage : -w [workers] between 1 and 16")
 	flag.IntVar(&seenNodesSplit, "ss", 1, "usage : -ss [setNodesSplit] between 1 and 32")
 	flag.IntVar(&speedDisplay, "sd", 100, "usage : -sd [speedDisplay] between 1 and 1000")
+	flag.BoolVar(&iterativeDepth, "i", true, "usage : -i [true|false]")
 	flag.Parse()
 
 	var board [][]int
@@ -291,28 +312,30 @@ func main() {
 	fmt.Println("Now starting with :", eval.name)
 	start := time.Now()
 	data := initData(board, workers, seenNodesSplit)
-	maxScore := eval.fx(board, board, goal(len(board)), []byte{}) + 1
-	//maxScore |= (1 << 31 - 1)
+	var maxScore int
+	if iterativeDepth {
+		maxScore = eval.fx(board, board, goal(len(board)), []byte{}) + 1
+	} else {
+		maxScore |= (1<<31 - 1)
+	}
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT, syscall.SIGQUIT, syscall.SIGKILL)
 
 	var wg sync.WaitGroup
-	fmt.Println("Before iteration")
-	Iteration :
+Iteration:
 	for maxScore < 1<<31 {
-		fmt.Println("score is now :", maxScore)
+		fmt.Println("Max score is now :", maxScore)
 		for i := 0; i < workers; i++ {
 			wg.Add(1)
 			go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodeSplit int, maxScore int) {
 
 				algo(board, evalfx, data, i, workers, seenNodeSplit, maxScore)
 				wg.Done()
-				fmt.Println("thread :", i, "returning")
 			}(board, eval.fx, data, i, workers, seenNodesSplit, maxScore)
 		}
 		wg.Wait()
 		switch data.win {
-		case true :
+		case true:
 			fmt.Println("Found a solution")
 			break Iteration
 		default:
@@ -321,8 +344,6 @@ func main() {
 			maxScore++
 		}
 	}
-	fmt.Println("after iteration")
-
 	end := time.Now()
 	elapsed := end.Sub(start)
 	if data.path != nil {
