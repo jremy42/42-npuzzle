@@ -309,8 +309,10 @@ func main() {
 
 	if file != "" {
 		file := OpenFile(file)
+		fmt.Println("Opening user provided map in file", file)
 		_, board = ParseInput(file)
 	} else if mapSize > 0 {
+		fmt.Println("Generating a map with size", mapSize)
 		board = gridGenerator(mapSize)
 	} else {
 		fmt.Println("Invalid Map size")
