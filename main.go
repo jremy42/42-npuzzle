@@ -66,7 +66,7 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 		}
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextPath := DeepSliceCopyAndAdd(path, dir.name)
-		nextNode := Node{nextPos, nextPath, score}
+		nextNode := Node{world :nextPos, path : nextPath, score : score}
 		keyNode, queueIndex, seenNodeIndex := matrixToStringSelector(nextPos, workers, seenNodesSplit)
 		data.muSeen[seenNodeIndex].Lock()
 		seenNodesScore, alreadyExplored := data.seenNodes[seenNodeIndex][keyNode]
