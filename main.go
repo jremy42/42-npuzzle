@@ -66,7 +66,7 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 		}
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextPath := DeepSliceCopyAndAdd(path, dir.name)
-		nextNode := Node{world :nextPos, path : nextPath, score : score}
+		nextNode := Node{world: nextPos, path: nextPath, score: score}
 		keyNode, queueIndex, seenNodeIndex := matrixToStringSelector(nextPos, workers, seenNodesSplit)
 		data.muSeen[seenNodeIndex].Lock()
 		seenNodesScore, alreadyExplored := data.seenNodes[seenNodeIndex][keyNode]
@@ -316,7 +316,7 @@ func main() {
 
 	if file != "" {
 		file := OpenFile(file)
-		fmt.Println("Opening user provided map in file", file)
+		fmt.Println("Opening user provided map in file", file.Name())
 		_, board = ParseInput(file)
 	} else if mapSize > 0 {
 		fmt.Println("Generating a map with size", mapSize)
