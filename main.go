@@ -130,7 +130,9 @@ func printInfo(workerIndex int, tries int, currentNode *Item, startAlgo time.Tim
 
 func getNextNode(data *safeData, workerIndex int) (currentNode *Item) {
 	data.muQueue[workerIndex].Lock()
-	currentNode = (heap.Pop(data.posQueue[workerIndex])).(*Item)
+	if data.posQueue[workerIndex].Len() != 0 {
+		currentNode = (heap.Pop(data.posQueue[workerIndex])).(*Item)
+	}
 	data.muQueue[workerIndex].Unlock()
 	return
 }
@@ -167,6 +169,9 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 			continue
 		}
 		currentNode := getNextNode(data, workerIndex)
+		if currentNode == nil {
+			continue
+		}
 		if foundSol != nil && currentNode.node.score > foundSol.node.score {
 			data.mu.Lock()
 			terminateSearch(data, foundSol.node.path, foundSol.node.score)
