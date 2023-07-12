@@ -19,7 +19,7 @@ do
         ITER=$((ITER+1))
     fi
     RES=$?
-    if [ $SIZE -eq 15]
+    if [ $SIZE -eq 15 ]
     then
         break
     fi

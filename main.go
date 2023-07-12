@@ -276,15 +276,15 @@ func checkFlags(workers int, seenNodesSplit int, heuristic string, mapSize int) 
 
 func main() {
 	var (
-		file           string
-		mapSize        int
-		heuristic      string
-		workers        int
-		seenNodesSplit int
-		speedDisplay   int
-		iterativeDepth bool
-		debug          bool
-		ui             bool
+		file             string
+		mapSize          int
+		heuristic        string
+		workers          int
+		seenNodesSplit   int
+		speedDisplay     int
+		noIterativeDepth bool
+		debug            bool
+		ui               bool
 	)
 	flag.StringVar(&file, "f", "", "usage : -f [filename]")
 	flag.IntVar(&mapSize, "s", 3, "usage : -s [size]")
@@ -300,9 +300,9 @@ func main() {
 	flag.IntVar(&workers, "w", 1, "usage : -w [workers] between 1 and 16")
 	flag.IntVar(&seenNodesSplit, "ss", 1, "usage : -ss [setNodesSplit] between 1 and 32")
 	flag.IntVar(&speedDisplay, "sd", 100, "usage : -sd [speedDisplay] between 1 and 1000")
-	flag.BoolVar(&iterativeDepth, "i", true, "usage : -i [true|false]")
-	flag.BoolVar(&debug, "d", false, "usage : -d [true|false]")
-	flag.BoolVar(&ui, "ui", false, "usage : -ui [true|false]")
+	flag.BoolVar(&noIterativeDepth, "no-i", false, "usage : -no-i")
+	flag.BoolVar(&debug, "d", false, "usage : -d")
+	flag.BoolVar(&ui, "no-ui", false, "usage : -no-ui")
 	flag.Parse()
 
 	var board [][]int
@@ -336,11 +336,11 @@ func main() {
 	start := time.Now()
 	data := initData(board, workers, seenNodesSplit)
 	var maxScore int
-	if iterativeDepth {
-		fmt.Println("Search Method : A*")
+	if !noIterativeDepth {
+		fmt.Println("Search Method : IDA*")
 		maxScore = eval.fx(board, board, goal(len(board)), []byte{}) + 1
 	} else {
-		fmt.Println("Search Method : IDA*")
+		fmt.Println("Search Method : A*")
 		maxScore |= (1<<31 - 1)
 	}
 	sigc := make(chan os.Signal, 1)
@@ -377,8 +377,8 @@ Iteration:
 		}
 
 		fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
-		fmt.Printf("len of solution %v, %d time complexity / tries, %d space complexity, score : %d\n", len(data.path), data.tries, closedSetComplexity, data.winScore)
-		if ui {
+		fmt.Printf("len of solution : %v, time complexity / tries : %d, space complexity : %d, score : %d\n", len(data.path), data.tries, closedSetComplexity, data.winScore)
+		if !ui {
 			displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, closedSetComplexity, workers, seenNodesSplit, speedDisplay)
 		}
 		fmt.Println(string(data.path))
