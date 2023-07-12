@@ -353,10 +353,9 @@ Iteration:
 		wg.Wait()
 		switch data.win {
 		case true:
-			fmt.Fprintf(os.Stderr, "Found a solution")
+			fmt.Fprintln(os.Stderr, "Found a solution")
 			break Iteration
 		default:
-			fmt.Fprintf(os.Stderr, "Increasing cut off")
 			data = initData(board, workers, seenNodesSplit)
 			maxScore++
 		}
