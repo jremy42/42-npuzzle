@@ -1,6 +1,6 @@
 #!/bin/bash
 RES=0
-SIZE=4
+SIZE=40
 ITER=0
 
 while [ $RES -eq 0 ]
@@ -11,15 +11,15 @@ do
         echo "test failed"
         exit 1
     fi
-    if [ $ITER -eq 20 ]
+    if [ $ITER -eq 1 ]
     then
-        SIZE=$((SIZE+1))
+        SIZE=$((SIZE+10))
         ITER=0
     else
-        ITER=$((ITER+1))
+        ITER=$((ITER+10))
     fi
     RES=$?
-    if [ $SIZE -eq 120 ]
+    if [ $SIZE -eq 1000 ]
     then
         break
     fi

@@ -64,7 +64,7 @@ func readInputArray(scanner *bufio.Scanner) []int {
 		for _, word := range words {
 			num, err := strconv.Atoi(word)
 			if err != nil || num < 0 || alreadyInArray(inputArray, num) {
-				fmt.Println("Error parsing input 1")
+				fmt.Println("Error parsing input")
 				os.Exit(1)
 			}
 			inputArray = append(inputArray, num)

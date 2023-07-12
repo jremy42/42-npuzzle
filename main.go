@@ -187,7 +187,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 				data.mu.Unlock()
 				return
 			} else {
-				fmt.Fprintf(os.Stderr ,"\x1b[33m[%2d] - Found a NON optimal solution\n\x1b[0m", workerIndex)
+				fmt.Fprintf(os.Stderr, "\x1b[33m[%2d] - Found a NON optimal solution\n\x1b[0m", workerIndex)
 				foundSol = currentNode
 				data.mu.Unlock()
 			}
@@ -250,7 +250,7 @@ func initData(board [][]int, workers int, seenNodesSplit int) (data *safeData) {
 	return
 }
 
-func checkFlags(workers int, seenNodesSplit int, heuristic string) eval {
+func checkFlags(workers int, seenNodesSplit int, heuristic string, mapSize int) eval {
 	if workers < 1 || workers > 16 {
 		fmt.Println("Invalid number of workers")
 		os.Exit(1)
@@ -259,11 +259,16 @@ func checkFlags(workers int, seenNodesSplit int, heuristic string) eval {
 		fmt.Println("Invalid number of seenNodesSplit")
 		os.Exit(1)
 	}
+	if mapSize < 3 || mapSize > 10 {
+		fmt.Println("Invalid map size")
+		os.Exit(1)
+	}
 	for _, current := range evals {
 		if current.name == heuristic {
 			return current
 		}
 	}
+
 	fmt.Println("Invalid heuristic")
 	os.Exit(1)
 	return eval{}
@@ -278,7 +283,8 @@ func main() {
 		seenNodesSplit int
 		speedDisplay   int
 		iterativeDepth bool
-		debug			bool
+		debug          bool
+		ui             bool
 	)
 	flag.StringVar(&file, "f", "", "usage : -f [filename]")
 	flag.IntVar(&mapSize, "s", 3, "usage : -s [size]")
@@ -296,10 +302,11 @@ func main() {
 	flag.IntVar(&speedDisplay, "sd", 100, "usage : -sd [speedDisplay] between 1 and 1000")
 	flag.BoolVar(&iterativeDepth, "i", true, "usage : -i [true|false]")
 	flag.BoolVar(&debug, "d", false, "usage : -d [true|false]")
+	flag.BoolVar(&ui, "ui", false, "usage : -ui [true|false]")
 	flag.Parse()
 
 	var board [][]int
-	eval := checkFlags(workers, seenNodesSplit, heuristic)
+	eval := checkFlags(workers, seenNodesSplit, heuristic, mapSize)
 
 	if !debug {
 		newstderr, _ := os.Open("/dev/null")
@@ -318,7 +325,8 @@ func main() {
 		fmt.Println("Invalid Map size")
 		os.Exit(1)
 	}
-	if !isSolvable(board) {
+	if !isSolvable(board) && ui {
+		fmt.Println("Board is not solvable")
 		displayBoard(board, []byte{}, eval.name, "", 0, 0, workers, seenNodesSplit, speedDisplay)
 		os.Exit(0)
 	}
@@ -370,8 +378,9 @@ Iteration:
 
 		fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
 		fmt.Printf("len of solution %v, %d time complexity / tries, %d space complexity, score : %d\n", len(data.path), data.tries, closedSetComplexity, data.winScore)
-		//displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, openSetComplexity, workers, seenNodesSplit, speedDisplay)
-
+		if ui {
+			displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, closedSetComplexity, workers, seenNodesSplit, speedDisplay)
+		}
 		fmt.Println(string(data.path))
 	} else {
 		fmt.Println("No solution !")
