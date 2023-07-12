@@ -97,7 +97,7 @@ func noMoreNodesToExplore(data *safeData) bool {
 	}
 	data.mu.Unlock()
 	if totalLen == 0 {
-		fmt.Println("all queues are empty. Leaving")
+		fmt.Fprintln(os.Stderr, "all queues are empty. Leaving")
 		return true
 	} else {
 		return false
@@ -123,7 +123,7 @@ func refreshData(data *safeData, workerIndex int) (over bool, tries, lenqueue in
 func printInfo(workerIndex int, tries int, currentNode *Item, startAlgo time.Time, lenqueue int) {
 
 	if tries > 0 && tries%100000 == 0 {
-		fmt.Printf("[%2d] Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d\n", workerIndex, time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue)
+		fmt.Fprintf(os.Stderr, "[%2d] Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d\n", workerIndex, time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue)
 	}
 
 }
@@ -146,11 +146,11 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 	for {
 		over, tries, lenqueue, idle := refreshData(data, workerIndex)
 		if over {
-			fmt.Printf("[%2d] - Someone ended sim. Leaving now\n", workerIndex)
+			fmt.Fprintf(os.Stderr, "[%2d] - Someone ended sim. Leaving now\n", workerIndex)
 			return
 		}
 		if idle >= workers {
-			fmt.Printf("[%2d] - Everyone is idle\n", workerIndex)
+			fmt.Fprintf(os.Stderr, "[%2d] - Everyone is idle\n", workerIndex)
 			return
 		}
 		if isIdle && lenqueue > 0 {
@@ -182,12 +182,12 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 		if isEqual(goalPos, currentNode.node.world) {
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
-				fmt.Printf("\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
+				fmt.Fprintf(os.Stderr, "\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
 				terminateSearch(data, currentNode.node.path, currentNode.node.score)
 				data.mu.Unlock()
 				return
 			} else {
-				fmt.Printf("\x1b[33m[%2d] - Found a NON optimal solution\n\x1b[0m", workerIndex)
+				fmt.Fprintf(os.Stderr ,"\x1b[33m[%2d] - Found a NON optimal solution\n\x1b[0m", workerIndex)
 				foundSol = currentNode
 				data.mu.Unlock()
 			}
@@ -278,6 +278,7 @@ func main() {
 		seenNodesSplit int
 		speedDisplay   int
 		iterativeDepth bool
+		debug			bool
 	)
 	flag.StringVar(&file, "f", "", "usage : -f [filename]")
 	flag.IntVar(&mapSize, "s", 3, "usage : -s [size]")
@@ -294,10 +295,17 @@ func main() {
 	flag.IntVar(&seenNodesSplit, "ss", 1, "usage : -ss [setNodesSplit] between 1 and 32")
 	flag.IntVar(&speedDisplay, "sd", 100, "usage : -sd [speedDisplay] between 1 and 1000")
 	flag.BoolVar(&iterativeDepth, "i", true, "usage : -i [true|false]")
+	flag.BoolVar(&debug, "d", false, "usage : -d [true|false]")
 	flag.Parse()
 
 	var board [][]int
 	eval := checkFlags(workers, seenNodesSplit, heuristic)
+
+	if !debug {
+		newstderr, _ := os.Open("/dev/null")
+		defer newstderr.Close()
+		os.Stderr = newstderr
+	}
 
 	if file != "" {
 		file := OpenFile(file)
@@ -319,8 +327,10 @@ func main() {
 	data := initData(board, workers, seenNodesSplit)
 	var maxScore int
 	if iterativeDepth {
+		fmt.Println("Search Method : A*")
 		maxScore = eval.fx(board, board, goal(len(board)), []byte{}) + 1
 	} else {
+		fmt.Println("Search Method : IDA*")
 		maxScore |= (1<<31 - 1)
 	}
 	sigc := make(chan os.Signal, 1)
@@ -329,7 +339,7 @@ func main() {
 	var wg sync.WaitGroup
 Iteration:
 	for maxScore < 1<<31 {
-		fmt.Println("Max score is now :", maxScore)
+		fmt.Fprintln(os.Stderr, "cut off is now :", maxScore)
 		for i := 0; i < workers; i++ {
 			wg.Add(1)
 			go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodeSplit int, maxScore int) {
@@ -341,10 +351,10 @@ Iteration:
 		wg.Wait()
 		switch data.win {
 		case true:
-			fmt.Println("Found a solution")
+			fmt.Fprintf(os.Stderr, "Found a solution")
 			break Iteration
 		default:
-			fmt.Println("Increasing score")
+			fmt.Fprintf(os.Stderr, "Increasing cut off")
 			data = initData(board, workers, seenNodesSplit)
 			maxScore++
 		}
