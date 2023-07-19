@@ -1,11 +1,11 @@
 #!/bin/bash
 RES=0
-SIZE=3
+SIZE=100
 ITER=0
 
 while [ $RES -eq 0 ]
 do
-    python npuzzle-gen.py -s $SIZE -i 20  > test.txt && go run . -no-i -w 8 -split 32 -f test.txt -no-ui
+    python npuzzle-gen.py -u $SIZE  > test.txt && go run . -w 8 -split 32 -f test.txt -no-ui
     if [ $? -ne 0 ]
     then
         echo "test failed"
@@ -19,7 +19,7 @@ do
         ITER=$((ITER+1))
     fi
     RES=$?
-    if [ $SIZE -eq 100 ]
+    if [ $SIZE -eq 15 ]
     then
         break
     fi

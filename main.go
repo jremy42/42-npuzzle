@@ -15,6 +15,7 @@ var evals = []eval{
 	{"dijkstra", dijkstra},
 	{"greedy_hamming", greedy_hamming},
 	{"greedy_inv", greedy_inv},
+	{"astar_hamming", astar_hamming},
 	{"greedy_manhattan", greedy_manhattan},
 	{"astar_manhattan", astar_manhattan_generator(1)},
 	{"astar_manhattan2", astar_manhattan_generator(2)},
@@ -59,6 +60,15 @@ func terminateSearch(data *safeData, solutionPath []byte, score int) {
 }
 
 func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
+	availableRAM, err := getAvailableRAM()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(0)
+	}
+	if availableRAM/1024/1024 < 1000 {
+		fmt.Println("Not enough RAM to continue, please buy more RAM!")
+		os.Exit(0)
+	}
 	for _, dir := range directions {
 		ok, nextPos := dir.fx(currentNode.node.world)
 		if !ok {
@@ -120,10 +130,16 @@ func refreshData(data *safeData, workerIndex int) (over bool, tries, lenqueue in
 	return
 }
 
-func printInfo(workerIndex int, tries int, currentNode *Item, startAlgo time.Time, lenqueue int) {
+func printInfo(workerIndex int, tries int, currentNode *Item, startAlgo time.Time, lenqueue, maxScore int) {
+	//var m runtime.MemStats
+	//runtime.ReadMemStats(&m)
+
+	// Informations sur la mémoire allouée et utilisée
 
 	if tries > 0 && tries%100000 == 0 {
-		fmt.Fprintf(os.Stderr, "[%2d] Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d\n", workerIndex, time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue)
+		fmt.Fprintf(os.Stderr, "[%2d] Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d, maxscore : %d\n", workerIndex, time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue, maxScore)
+		//fmt.Printf("Mémoire allouée : %d bytes\n", m.Alloc)
+		//fmt.Printf("Mémoire utilisée : %d bytes\n", m.Sys)
 	}
 
 }
@@ -178,7 +194,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 			data.mu.Unlock()
 			return
 		}
-		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue)
+		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue, maxScore)
 		if isEqual(goalPos, currentNode.node.world) {
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
@@ -274,6 +290,17 @@ func checkFlags(workers int, seenNodesSplit int, heuristic string, mapSize int) 
 	return eval{}
 }
 
+func getAvailableRAM() (uint64, error) {
+	var info syscall.Sysinfo_t
+	err := syscall.Sysinfo(&info)
+	if err != nil {
+		return 0, fmt.Errorf("erreur lors de la récupération des informations sur la mémoire : %v", err)
+	}
+	availableRAM := info.Freeram*uint64(info.Unit) + info.Bufferram*uint64(info.Unit)
+
+	return availableRAM, nil
+}
+
 func main() {
 	var (
 		file             string
@@ -284,8 +311,9 @@ func main() {
 		speedDisplay     int
 		noIterativeDepth bool
 		debug            bool
-		ui               bool
+		disableUI        bool
 	)
+
 	flag.StringVar(&file, "f", "", "usage : -f [filename]")
 	flag.IntVar(&mapSize, "s", 3, "usage : -s [size]")
 	flag.StringVar(&heuristic, "h", "astar_manhattan", `usage : -h [heuristic] 
@@ -298,12 +326,15 @@ func main() {
 	- astar_inversion
 	`)
 	flag.IntVar(&workers, "w", 1, "usage : -w [workers] between 1 and 16")
-	flag.IntVar(&seenNodesSplit, "ss", 1, "usage : -ss [setNodesSplit] between 1 and 32")
-	flag.IntVar(&speedDisplay, "sd", 100, "usage : -sd [speedDisplay] between 1 and 1000")
+	flag.IntVar(&seenNodesSplit, "split", 1, "usage : -ss [setNodesSplit] between 1 and 32")
+	flag.IntVar(&speedDisplay, "speed", 100, "usage : -sd [speedDisplay] between 1 and 1000")
 	flag.BoolVar(&noIterativeDepth, "no-i", false, "usage : -no-i")
-	flag.BoolVar(&debug, "d", false, "usage : -d")
-	flag.BoolVar(&ui, "no-ui", false, "usage : -no-ui")
+	flag.BoolVar(&debug, "debug", false, "usage : -d")
+	flag.BoolVar(&disableUI, "no-ui", false, "usage : -no-ui")
 	flag.Parse()
+
+	//availabeRam, _ := getAvailableRAM()
+	//fmt.Println("Available RAM :", availabeRam/1024/1024, "MB")
 
 	var board [][]int
 	eval := checkFlags(workers, seenNodesSplit, heuristic, mapSize)
@@ -325,13 +356,14 @@ func main() {
 		fmt.Println("Invalid Map size")
 		os.Exit(1)
 	}
-	if !isSolvable(board) && ui {
+	if !isSolvable(board) {
 		fmt.Println("Board is not solvable")
-		displayBoard(board, []byte{}, eval.name, "", 0, 0, workers, seenNodesSplit, speedDisplay)
+		if !disableUI {
+			displayBoard(board, []byte{}, eval.name, "", 0, 0, workers, seenNodesSplit, speedDisplay)
+		}
 		os.Exit(0)
 	}
 	fmt.Println("Board is :", board)
-
 	fmt.Println("Now starting with :", eval.name)
 	start := time.Now()
 	data := initData(board, workers, seenNodesSplit)
@@ -378,7 +410,7 @@ Iteration:
 
 		fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
 		fmt.Printf("len of solution : %v, time complexity / tries : %d, space complexity : %d, score : %d\n", len(data.path), data.tries, closedSetComplexity, data.winScore)
-		if !ui {
+		if !disableUI {
 			displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, closedSetComplexity, workers, seenNodesSplit, speedDisplay)
 		}
 		fmt.Println(string(data.path))
