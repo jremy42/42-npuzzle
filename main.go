@@ -60,14 +60,16 @@ func terminateSearch(data *safeData, solutionPath []byte, score int) {
 }
 
 func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
-	availableRAM, err := getAvailableRAM()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(0)
-	}
-	if availableRAM/1024/1024 < 1000 {
-		fmt.Println("Not enough RAM to continue, please buy more RAM!")
-		os.Exit(0)
+	if data.tries%1000 == 0 {
+		availableRAM, err := getAvailableRAM()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if availableRAM/1024/1024 < 1000 {
+			fmt.Println("Not enough RAM to continue, try with another heuristic")
+			os.Exit(0)
+		}
 	}
 	for _, dir := range directions {
 		ok, nextPos := dir.fx(currentNode.node.world)
