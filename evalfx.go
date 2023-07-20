@@ -2,12 +2,12 @@ package main
 
 import "math"
 
-func dijkstra(pos, startPos, goalPos [][]uint8, path []byte) int {
+func dijkstra(pos, startPos, goalPos [][]int, path []byte) int {
 	score := len(path) + 1
 	return score
 }
 
-func greedy_manhattan(pos, startPos, goalPos [][]uint8, path []byte) int {
+func greedy_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
 	score := 0
 	for j, row := range goalPos {
 		for i, value := range row {
@@ -20,7 +20,7 @@ func greedy_manhattan(pos, startPos, goalPos [][]uint8, path []byte) int {
 	return score
 }
 
-func greedy_hamming(pos, startPos, goalPos [][]uint8, path []byte) int {
+func greedy_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 	score := 0
 	for i, row := range goalPos {
 		for j, value := range row {
@@ -32,7 +32,7 @@ func greedy_hamming(pos, startPos, goalPos [][]uint8, path []byte) int {
 	return score
 }
 
-func greedy_inv(pos, startPos, goalPos [][]uint8, path []byte) int {
+func greedy_inv(pos, startPos, goalPos [][]int, path []byte) int {
 	flattenedPos := matrixToTableSnail(pos)
 	inversion := 0
 	for i := range flattenedPos {
@@ -44,17 +44,17 @@ func greedy_inv(pos, startPos, goalPos [][]uint8, path []byte) int {
 	}
 	return inversion
 }
-func astar_hamming(pos, startPos, goalPos [][]uint8, path []byte) int {
+func astar_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 	return len(path) + 1 + greedy_hamming(pos, startPos, goalPos, path)
 }
 
 func astar_manhattan_generator(weight float64) evalFx {
-	return func(pos, startPos, goalPos [][]uint8, path []byte) int {
+	return func(pos, startPos, goalPos [][]int, path []byte) int {
 		initDist := len(path) + 1
 		return initDist + int(weight*float64(greedy_manhattan(pos, startPos, goalPos, path)))
 	}
 }
 
-func astar_inv(pos, startPos, goalPos [][]uint8, path []byte) int {
+func astar_inv(pos, startPos, goalPos [][]int, path []byte) int {
 	return len(path) + 1 + greedy_inv(pos, startPos, goalPos, path)
 }

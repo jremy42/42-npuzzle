@@ -55,18 +55,6 @@ var directions = []struct {
 	{'R', moveRight},
 }
 
-func applyMoves(path []byte, startPos [][]uint8) (currentPos [][]uint8){
-	currentPos = DeepSliceCopyAndAdd(startPos)
-	for _, letter := range path {
-		for _, item := range directions {
-			if item.name == letter {
-				_, currentPos = item.fx(currentPos)
-			}
-		}
-	}
-	return
-}
-
 func terminateSearch(data *safeData, solutionPath []byte, score int) {
 	data.path = solutionPath
 	data.over = true
@@ -74,7 +62,7 @@ func terminateSearch(data *safeData, solutionPath []byte, score int) {
 	data.winScore = score
 }
 
-func getNextMoves(startPos, goalPos [][]uint8, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
+func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
 	if data.tries%1000 == 0 {
 		availableRAM, err := getAvailableRAM()
 		if err != nil {
@@ -87,15 +75,13 @@ func getNextMoves(startPos, goalPos [][]uint8, scoreFx evalFx, path []byte, curr
 		}
 	}
 	for _, dir := range directions {
-		currentWorld := applyMoves(currentNode.node.path, startPos)
-		//ok, nextPos := dir.fx(currentNode.node.world)
-		ok, nextPos := dir.fx(currentWorld)
+		ok, nextPos := dir.fx(currentNode.node.world)
 		if !ok {
 			continue
 		}
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextPath := DeepSliceCopyAndAdd(path, dir.name)
-		nextNode := Node{/*world: nextPos, */path: nextPath, score: score}
+		nextNode := Node{world: nextPos, path: nextPath, score: score}
 		keyNode, queueIndex, seenNodeIndex := matrixToStringSelector(nextPos, workers, seenNodesSplit)
 		data.muSeen[seenNodeIndex].Lock()
 		seenNodesScore, alreadyExplored := data.seenNodes[seenNodeIndex][keyNode]
@@ -172,7 +158,7 @@ func getNextNode(data *safeData, workerIndex int) (currentNode *Item) {
 	return
 }
 
-func algo(world [][]uint8, scoreFx evalFx, data *safeData, workerIndex int, workers int, seenNodesSplit int, maxScore int) {
+func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, workers int, seenNodesSplit int, maxScore int) {
 	goalPos := goal(len(world))
 	//startPos := Deep2DSliceCopy(world)
 	startPos := world
@@ -215,8 +201,7 @@ func algo(world [][]uint8, scoreFx evalFx, data *safeData, workerIndex int, work
 			return
 		}
 		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue, maxScore)
-		currentWorld := applyMoves(currentNode.node.path, startPos)
-		if isEqual(goalPos, currentWorld) {
+		if isEqual(goalPos, currentNode.node.world) {
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
 				fmt.Fprintf(os.Stderr, "\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
@@ -260,7 +245,7 @@ func checkOptimalSolution(currentNode *Item, data *safeData) bool {
 	return true
 }
 
-func initData(board [][]uint8, workers int, seenNodesSplit int) (data *safeData) {
+func initData(board [][]int, workers int, seenNodesSplit int) (data *safeData) {
 	data = &safeData{}
 	//startPos := Deep2DSliceCopy(board)
 	startPos := board
@@ -274,7 +259,7 @@ func initData(board [][]uint8, workers int, seenNodesSplit int) (data *safeData)
 	for i := 0; i < workers; i++ {
 
 		queue := make(PriorityQueue, 1, 1000)
-		queue[0] = &Item{node: Node{/*world: startPos,*/ score: 0, path: []byte{}}}
+		queue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
 		data.posQueue[i] = &queue
 		heap.Init(data.posQueue[i])
 	}
@@ -313,7 +298,6 @@ func checkFlags(workers int, seenNodesSplit int, heuristic string, mapSize int) 
 }
 
 func getAvailableRAM() (uint64, error) {
-	/*
 	var info syscall.Sysinfo_t
 	err := syscall.Sysinfo(&info)
 	if err != nil {
@@ -322,8 +306,6 @@ func getAvailableRAM() (uint64, error) {
 	availableRAM := info.Freeram*uint64(info.Unit) + info.Bufferram*uint64(info.Unit)
 
 	return availableRAM, nil
-	*/
-	 return 1024 * 1024 * 1024, nil
 }
 
 func main() {
@@ -366,7 +348,7 @@ func main() {
 	//availabeRam, _ := getAvailableRAM()
 	//fmt.Println("Available RAM :", availabeRam/1024/1024, "MB")
 
-	var board [][]uint8
+	var board [][]int
 	eval := checkFlags(workers, seenNodesSplit, heuristic, mapSize)
 
 	if !debug {
@@ -414,7 +396,7 @@ Iteration:
 		fmt.Fprintln(os.Stderr, "cut off is now :", maxScore)
 		for i := 0; i < workers; i++ {
 			wg.Add(1)
-			go func(board [][]uint8, evalfx evalFx, data *safeData, i int, workers int, seenNodeSplit int, maxScore int) {
+			go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodeSplit int, maxScore int) {
 
 				algo(board, evalfx, data, i, workers, seenNodeSplit, maxScore)
 				wg.Done()
