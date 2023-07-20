@@ -39,21 +39,14 @@ func Index[T comparable](slice []T, toFind T) int {
 	return -1
 }
 
-/*
 func posAlreadySeen(slice []Node, toFind [][]uint8) Node {
 	for _, v := range slice {
-		currentWorld := applyMoves(v.path, startPos)
-		if isEqual(currentWorld, toFind) {
-			return v
-		}
 		if isEqual(v.world, toFind) {
 			return v
 		}
 	}
-	//return Node{nil, []byte{}, -1}
-	return Node{[]byte{}, -1}
+	return Node{nil, []byte{}, -1}
 }
-*/
 
 func DeepSliceCopyAndAdd[T any](slice []T, elems ...T) []T {
 	newSlice := make([]T, len(slice), len(slice)+len(elems))
