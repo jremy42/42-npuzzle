@@ -12,14 +12,14 @@ type Pos2D struct {
 }
 
 type Node struct {
-	world [][]int
+	world [][]uint8
 	path  []byte
 	score int
 }
 
-type moveFx func([][]int) (bool, [][]int)
+type moveFx func([][]uint8) (bool, [][]uint8)
 
-type evalFx func(pos, startPos, goalPos [][]int, path []byte) int
+type evalFx func(pos, startPos, goalPos [][]uint8, path []byte) int
 
 type eval struct {
 	name string

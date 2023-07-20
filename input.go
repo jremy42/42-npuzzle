@@ -23,7 +23,7 @@ func OpenFile(filename string) *os.File {
 	return file
 }
 
-func ParseInput(file *os.File) (size int, board [][]int) {
+func ParseInput(file *os.File) (size int, board [][]uint8) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	inputArray := readInputArray(scanner)
@@ -87,16 +87,16 @@ func extractSize(inputArray []int) int {
 	return size
 }
 
-func createBoard(size int, inputArray []int) [][]int {
-	board := make([][]int, size)
+func createBoard(size int, inputArray []int) [][]uint8 {
+	board := make([][]uint8, size)
 	for i := 0; i < size; i++ {
-		board[i] = make([]int, size)
+		board[i] = make([]uint8, size)
 		for j := 0; j < size; j++ {
 			if inputArray[i*size+j+1] < 0 || inputArray[i*size+j+1] > size*size-1 {
 				fmt.Println("Error parsing input 4", size, inputArray[i*size+j+1], i, j)
 				os.Exit(1)
 			}
-			board[i][j] = inputArray[i*size+j+1]
+			board[i][j] = uint8(inputArray[i*size+j+1])
 		}
 	}
 	return board

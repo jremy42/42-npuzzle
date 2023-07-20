@@ -62,7 +62,7 @@ func terminateSearch(data *safeData, solutionPath []byte, score int) {
 	data.winScore = score
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
+func getNextMoves(startPos, goalPos [][]uint8, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
 	if data.tries%1000 == 0 {
 		availableRAM, err := getAvailableRAM()
 		if err != nil {
@@ -158,7 +158,7 @@ func getNextNode(data *safeData, workerIndex int) (currentNode *Item) {
 	return
 }
 
-func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, workers int, seenNodesSplit int, maxScore int) {
+func algo(world [][]uint8, scoreFx evalFx, data *safeData, workerIndex int, workers int, seenNodesSplit int, maxScore int) {
 	goalPos := goal(len(world))
 	//startPos := Deep2DSliceCopy(world)
 	startPos := world
@@ -245,7 +245,7 @@ func checkOptimalSolution(currentNode *Item, data *safeData) bool {
 	return true
 }
 
-func initData(board [][]int, workers int, seenNodesSplit int) (data *safeData) {
+func initData(board [][]uint8, workers int, seenNodesSplit int) (data *safeData) {
 	data = &safeData{}
 	//startPos := Deep2DSliceCopy(board)
 	startPos := board
@@ -348,7 +348,7 @@ func main() {
 	//availabeRam, _ := getAvailableRAM()
 	//fmt.Println("Available RAM :", availabeRam/1024/1024, "MB")
 
-	var board [][]int
+	var board [][]uint8
 	eval := checkFlags(workers, seenNodesSplit, heuristic, mapSize)
 
 	if !debug {
@@ -396,7 +396,7 @@ Iteration:
 		fmt.Fprintln(os.Stderr, "cut off is now :", maxScore)
 		for i := 0; i < workers; i++ {
 			wg.Add(1)
-			go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodeSplit int, maxScore int) {
+			go func(board [][]uint8, evalfx evalFx, data *safeData, i int, workers int, seenNodeSplit int, maxScore int) {
 
 				algo(board, evalfx, data, i, workers, seenNodeSplit, maxScore)
 				wg.Done()
