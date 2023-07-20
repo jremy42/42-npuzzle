@@ -67,7 +67,7 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 			os.Exit(1)
 		}
 		if availableRAM/1024/1024 < 1000 {
-			fmt.Println("Not enough RAM to continue, try with another heuristic")
+			fmt.Println("Not enough RAM to continue, try with another heuristic :", availableRAM/1024/1024)
 			os.Exit(0)
 		}
 	}
@@ -328,10 +328,10 @@ func main() {
 	- astar_inversion
 	`)
 	flag.IntVar(&workers, "w", 1, "usage : -w [workers] between 1 and 16")
-	flag.IntVar(&seenNodesSplit, "split", 1, "usage : -ss [setNodesSplit] between 1 and 32")
-	flag.IntVar(&speedDisplay, "speed", 100, "usage : -sd [speedDisplay] between 1 and 1000")
+	flag.IntVar(&seenNodesSplit, "split", 1, "usage : -split [setNodesSplit] between 1 and 32")
+	flag.IntVar(&speedDisplay, "speed", 100, "usage : -speed [speedDisplay] between 1 and 1000")
 	flag.BoolVar(&noIterativeDepth, "no-i", false, "usage : -no-i")
-	flag.BoolVar(&debug, "debug", false, "usage : -d")
+	flag.BoolVar(&debug, "d", false, "usage : -d")
 	flag.BoolVar(&disableUI, "no-ui", false, "usage : -no-ui")
 	flag.Parse()
 
