@@ -4,6 +4,9 @@ import (
 	"container/heap"
 	"flag"
 	"fmt"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"sync"
@@ -157,7 +160,8 @@ func getNextNode(data *safeData, workerIndex int) (currentNode *Item) {
 
 func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, workers int, seenNodesSplit int, maxScore int) {
 	goalPos := goal(len(world))
-	startPos := Deep2DSliceCopy(world)
+	//startPos := Deep2DSliceCopy(world)
+	startPos := world
 	var foundSol *Item
 	startAlgo := time.Now()
 	isIdle := false
@@ -243,7 +247,8 @@ func checkOptimalSolution(currentNode *Item, data *safeData) bool {
 
 func initData(board [][]int, workers int, seenNodesSplit int) (data *safeData) {
 	data = &safeData{}
-	startPos := Deep2DSliceCopy(board)
+	//startPos := Deep2DSliceCopy(board)
+	startPos := board
 	data.seenNodes = make([]map[string]int, seenNodesSplit)
 	keyNode, _, _ := matrixToStringSelector(startPos, workers, seenNodesSplit)
 	for i := 0; i < seenNodesSplit; i++ {
@@ -304,6 +309,11 @@ func getAvailableRAM() (uint64, error) {
 }
 
 func main() {
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	var (
 		file             string
 		mapSize          int
@@ -398,6 +408,7 @@ Iteration:
 			fmt.Fprintln(os.Stderr, "Found a solution")
 			break Iteration
 		default:
+			data = nil
 			data = initData(board, workers, seenNodesSplit)
 			maxScore++
 		}
