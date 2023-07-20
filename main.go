@@ -313,6 +313,7 @@ func checkFlags(workers int, seenNodesSplit int, heuristic string, mapSize int) 
 }
 
 func getAvailableRAM() (uint64, error) {
+	/*
 	var info syscall.Sysinfo_t
 	err := syscall.Sysinfo(&info)
 	if err != nil {
@@ -321,6 +322,8 @@ func getAvailableRAM() (uint64, error) {
 	availableRAM := info.Freeram*uint64(info.Unit) + info.Bufferram*uint64(info.Unit)
 
 	return availableRAM, nil
+	*/
+	 return 1024 * 1024 * 1024, nil
 }
 
 func main() {
