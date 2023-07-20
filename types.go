@@ -12,7 +12,7 @@ type Pos2D struct {
 }
 
 type Node struct {
-	world [][]uint8
+	//world [][]uint8
 	path  []byte
 	score int
 }

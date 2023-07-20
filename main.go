@@ -55,6 +55,18 @@ var directions = []struct {
 	{'R', moveRight},
 }
 
+func applyMoves(path []byte, startPos [][]uint8) (currentPos [][]uint8){
+	currentPos = DeepSliceCopyAndAdd(startPos)
+	for _, letter := range path {
+		for _, item := range directions {
+			if item.name == letter {
+				_, currentPos = item.fx(currentPos)
+			}
+		}
+	}
+	return
+}
+
 func terminateSearch(data *safeData, solutionPath []byte, score int) {
 	data.path = solutionPath
 	data.over = true
@@ -75,13 +87,15 @@ func getNextMoves(startPos, goalPos [][]uint8, scoreFx evalFx, path []byte, curr
 		}
 	}
 	for _, dir := range directions {
-		ok, nextPos := dir.fx(currentNode.node.world)
+		currentWorld := applyMoves(currentNode.node.path, startPos)
+		//ok, nextPos := dir.fx(currentNode.node.world)
+		ok, nextPos := dir.fx(currentWorld)
 		if !ok {
 			continue
 		}
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextPath := DeepSliceCopyAndAdd(path, dir.name)
-		nextNode := Node{world: nextPos, path: nextPath, score: score}
+		nextNode := Node{/*world: nextPos, */path: nextPath, score: score}
 		keyNode, queueIndex, seenNodeIndex := matrixToStringSelector(nextPos, workers, seenNodesSplit)
 		data.muSeen[seenNodeIndex].Lock()
 		seenNodesScore, alreadyExplored := data.seenNodes[seenNodeIndex][keyNode]
@@ -201,7 +215,8 @@ func algo(world [][]uint8, scoreFx evalFx, data *safeData, workerIndex int, work
 			return
 		}
 		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue, maxScore)
-		if isEqual(goalPos, currentNode.node.world) {
+		currentWorld := applyMoves(currentNode.node.path, startPos)
+		if isEqual(goalPos, currentWorld) {
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
 				fmt.Fprintf(os.Stderr, "\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
@@ -259,7 +274,7 @@ func initData(board [][]uint8, workers int, seenNodesSplit int) (data *safeData)
 	for i := 0; i < workers; i++ {
 
 		queue := make(PriorityQueue, 1, 1000)
-		queue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
+		queue[0] = &Item{node: Node{/*world: startPos,*/ score: 0, path: []byte{}}}
 		data.posQueue[i] = &queue
 		heap.Init(data.posQueue[i])
 	}
