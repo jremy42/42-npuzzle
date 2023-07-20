@@ -10,7 +10,6 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 )
 
-// Visu is the main function for the visualisation
 func convertBoard(board [][]int) [][]string {
 	var convertedBoard [][]string
 	for i := 0; i < len(board); i++ {
@@ -36,10 +35,8 @@ func displayBoard(board [][]int, path []byte, elvalName string, times string, tr
 	table := createTable(board)
 	rec := table.GetRect()
 	texte := ""
-	//lenText := 0
 	if len(path) == 0 {
 		texte = fmt.Sprintln("this board is not solvable ")
-		//lenText = len(texte) * 2
 	} else {
 		texte = fmt.Sprintf(
 			`Success with : %v in %v !
@@ -49,7 +46,6 @@ func displayBoard(board [][]int, path []byte, elvalName string, times string, tr
 	worker : %d
 	close set split : %d
 	`, elvalName, times, len(path), tries, openSetComplexity, workers, closeSetSplit)
-		//lenText = 60
 	}
 	par := widgets.NewParagraph()
 	par.Text = texte
@@ -73,13 +69,11 @@ func displayBoard(board [][]int, path []byte, elvalName string, times string, tr
 			case 'R':
 				_, board = moveRight(board)
 			}
-			//fmt.Println(string(path[i]))
 			time.Sleep(time.Duration(speedDisplay) * time.Millisecond)
 			table.Rows = convertBoard(board)
 			ui.Render(table)
 
 		}
-		//time.Sleep(5000 * time.Millisecond)
 	}
 	<-uiEvents
 }

@@ -39,15 +39,6 @@ func Index[T comparable](slice []T, toFind T) int {
 	return -1
 }
 
-func posAlreadySeen(slice []Node, toFind [][]int) Node {
-	for _, v := range slice {
-		if isEqual(v.world, toFind) {
-			return v
-		}
-	}
-	return Node{nil, []byte{}, -1}
-}
-
 func DeepSliceCopyAndAdd[T any](slice []T, elems ...T) []T {
 	newSlice := make([]T, len(slice), len(slice)+len(elems))
 	copy(newSlice, slice)
@@ -97,7 +88,6 @@ func openDir(dir string) []fs.FileInfo {
 	return files
 }
 
-//1972
 func matrixToString2(matrix [][]int) string {
 
 	results := ""
@@ -113,14 +103,13 @@ func matrixToString2(matrix [][]int) string {
 
 func matrixToStringSelector(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
 	if len(matrix) < 10 {
-		return matrixToString(matrix, worker, seenNodeMap)
+		return matrixToStringOptimal(matrix, worker, seenNodeMap)
 	} else {
 		return matrixToStringNoOpti(matrix, worker, seenNodeMap)
 	}
 }
 
-//3224
-func matrixToString(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
+func matrixToStringOptimal(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
 
 	results := make([]byte, len(matrix)*len(matrix)*4)
 	size := len(matrix)

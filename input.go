@@ -12,8 +12,6 @@ type Board struct {
 	Board [][]int
 }
 
-// OpenFile opens a file and returns a pointer to it
-
 func OpenFile(filename string) *os.File {
 	file, err := os.Open(filename)
 	if err != nil {
