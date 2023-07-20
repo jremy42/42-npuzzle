@@ -72,7 +72,7 @@ Iteration:
 			break Iteration
 		default:
 			*data = initData(board, workers, seenNodesSplit)
-			maxScore++
+			maxScore +=2
 		}
 	}
 }

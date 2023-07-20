@@ -61,8 +61,11 @@ func readInputArray(scanner *bufio.Scanner) []int {
 		words := strings.Fields(line)
 		for _, word := range words {
 			num, err := strconv.Atoi(word)
-			if err != nil || num < 0 || alreadyInArray(inputArray, num) {
-				fmt.Println("Error parsing input 1")
+			if err != nil || num < 0 {
+				fmt.Println("Error parsing input : Atoi Error or number < 0")
+				os.Exit(1)
+			} else if alreadyInArray(inputArray, num) {
+				fmt.Println("Error parsing input : duplicate number")
 				os.Exit(1)
 			}
 			inputArray = append(inputArray, num)
@@ -74,12 +77,12 @@ func readInputArray(scanner *bufio.Scanner) []int {
 
 func extractSize(inputArray []int) int {
 	if len(inputArray) == 0 {
-		fmt.Println("Error parsing input 2")
+		fmt.Println("Error parsing input : wrong grid size")
 		os.Exit(1)
 	}
 	size := inputArray[0]
 	if size*size != len(inputArray)-1 {
-		fmt.Println("Error parsing input 3")
+		fmt.Println("Error parsing input : Extra or missing numbers in grid")
 		os.Exit(1)
 	}
 	return size
@@ -91,7 +94,7 @@ func createBoard(size int, inputArray []int) [][]int {
 		board[i] = make([]int, size)
 		for j := 0; j < size; j++ {
 			if inputArray[i*size+j+1] < 0 || inputArray[i*size+j+1] > size*size-1 {
-				fmt.Println("Error parsing input 4", size, inputArray[i*size+j+1], i, j)
+				fmt.Println("Error parsing input. Size :", size, "number causing error :", inputArray[i*size+j+1], "at row :", i, "and column :", j)
 				os.Exit(1)
 			}
 			board[i][j] = inputArray[i*size+j+1]

@@ -5,7 +5,6 @@ import ()
 func gridGenerator(mapSize int) (board [][]int) {
 
 	for {
-
 		randomNumber := make(map[int]int)
 		for i := 0; i < mapSize*mapSize; i++ {
 			randomNumber[i] = i

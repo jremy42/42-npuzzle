@@ -1,7 +1,7 @@
 all:
-	go build .
+	cd srcs && go build -o ..
 
 clean:
-	go clean
+	rm -f npuzzle
 
 re: clean all
