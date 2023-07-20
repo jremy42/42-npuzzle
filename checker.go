@@ -1,8 +1,8 @@
 package main
 
-func matrixToTableSnail(matrix [][]uint8) []uint8 {
+func matrixToTableSnail(matrix [][]int) []int {
 	boardSize := len(matrix)
-	table := make([]uint8, boardSize*boardSize)
+	table := make([]int, boardSize*boardSize)
 	startLine, endLine := 0, boardSize-1
 	startColumn, endColumn := 0, boardSize-1
 	index := 0
@@ -35,7 +35,7 @@ func matrixToTableSnail(matrix [][]uint8) []uint8 {
 	return table
 }
 
-func isSolvable(board [][]uint8) bool {
+func isSolvable(board [][]int) bool {
 
 	board1d := matrixToTableSnail(board)
 	inversions := 0

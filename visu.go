@@ -11,7 +11,7 @@ import (
 )
 
 // Visu is the main function for the visualisation
-func convertBoard(board [][]uint8) [][]string {
+func convertBoard(board [][]int) [][]string {
 	var convertedBoard [][]string
 	for i := 0; i < len(board); i++ {
 		var row []string
@@ -20,7 +20,7 @@ func convertBoard(board [][]uint8) [][]string {
 				row = append(row, " ")
 				continue
 			}
-			row = append(row, strconv.Itoa(int(board[i][j])))
+			row = append(row, strconv.Itoa(board[i][j]))
 		}
 		convertedBoard = append(convertedBoard, row)
 	}
@@ -28,7 +28,7 @@ func convertBoard(board [][]uint8) [][]string {
 
 }
 
-func displayBoard(board [][]uint8, path []byte, elvalName string, times string, tries, openSetComplexity, workers, closeSetSplit, speedDisplay int) {
+func displayBoard(board [][]int, path []byte, elvalName string, times string, tries, openSetComplexity, workers, closeSetSplit, speedDisplay int) {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
@@ -84,7 +84,7 @@ func displayBoard(board [][]uint8, path []byte, elvalName string, times string, 
 	<-uiEvents
 }
 
-func playBoard(board [][]uint8) bool {
+func playBoard(board [][]int) bool {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
@@ -117,7 +117,7 @@ func playBoard(board [][]uint8) bool {
 	}
 }
 
-func createTable(board [][]uint8) *widgets.Table {
+func createTable(board [][]int) *widgets.Table {
 	table := widgets.NewTable()
 	table.Title = "n-puzzle"
 	table.TitleStyle = ui.NewStyle(ui.ColorBlue)

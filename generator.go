@@ -2,7 +2,7 @@ package main
 
 import ()
 
-func gridGenerator(mapSize int) (board [][]uint8) {
+func gridGenerator(mapSize int) (board [][]int) {
 
 	for {
 
@@ -10,16 +10,16 @@ func gridGenerator(mapSize int) (board [][]uint8) {
 		for i := 0; i < mapSize*mapSize; i++ {
 			randomNumber[i] = i
 		}
-		board = make([][]uint8, mapSize)
+		board = make([][]int, mapSize)
 
 		j := 0
 		i := 0
 		for _, number := range randomNumber {
 			if i%mapSize == 0 {
-				board[j] = make([]uint8, mapSize)
+				board[j] = make([]int, mapSize)
 				j++
 			}
-			board[j-1][i%mapSize] = uint8(number)
+			board[j-1][i%mapSize] = number
 			i++
 		}
 		if isSolvable(board) {
@@ -29,11 +29,11 @@ func gridGenerator(mapSize int) (board [][]uint8) {
 	return board
 }
 
-func goal(mapSize int) (goal [][]uint8) {
+func goal(mapSize int) (goal [][]int) {
 
-	goal = make([][]uint8, mapSize)
+	goal = make([][]int, mapSize)
 	for i := range goal {
-		goal[i] = make([]uint8, mapSize)
+		goal[i] = make([]int, mapSize)
 	}
 	states := []Move2D{
 		{'r', 1, 0},
@@ -55,7 +55,7 @@ func goal(mapSize int) (goal [][]uint8) {
 		} else {
 			i, j = nextI, nextJ
 			count++
-			goal[j][i] = uint8(count)
+			goal[j][i] = count
 		}
 	}
 	return goal
