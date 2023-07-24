@@ -19,7 +19,7 @@ func areFlagsOk(workers int, seenNodesSplit int, heuristic string, mapSize int) 
 		fmt.Println("Invalid number of splits")
 		os.Exit(1)
 	}
-	if mapSize < 3 || mapSize > 10 {
+	if mapSize < 3 {
 		fmt.Println("Invalid map size")
 		os.Exit(1)
 	}
@@ -72,7 +72,7 @@ Iteration:
 			break Iteration
 		default:
 			*data = initData(board, workers, seenNodesSplit)
-			maxScore +=2
+			maxScore += 2
 		}
 	}
 }
