@@ -52,29 +52,23 @@ func getAvailableRAM() (uint64, error) {
 	return availableRAM, nil
 }
 
-func iterateAlgo(board [][]int, maxScore int, workers int, seenNodesSplit int, evalfx evalFx, data *safeData) {
+func iterateAlgo(board [][]int, workers int, seenNodesSplit int, evalfx evalFx, data *safeData) (result Result) {
 	var wg sync.WaitGroup
-Iteration:
-	for maxScore < 1<<31 {
-		fmt.Fprintln(os.Stderr, "cut off is now :", maxScore)
-		for i := 0; i < workers; i++ {
-			wg.Add(1)
-			go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodesSplit int, maxScore int) {
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodesSplit int) {
 
-				algo(board, evalfx, data, i, workers, seenNodesSplit, maxScore)
-				wg.Done()
-			}(board, evalfx, data, i, workers, seenNodesSplit, maxScore)
-		}
-		wg.Wait()
-		switch data.win {
-		case true:
-			fmt.Fprintln(os.Stderr, "Found a solution")
-			break Iteration
-		default:
-			*data = initData(board, workers, seenNodesSplit)
-			maxScore += 2
+			algo(board, evalfx, data, i, workers, seenNodesSplit)
+			wg.Done()
+		}(board, evalfx, data, i, workers, seenNodesSplit)
+	}
+	wg.Wait()
+	if data.path != nil {
+		for _, value := range data.seenNodes {
+			data.closedSetComplexity += len(value)
 		}
 	}
+	return Result{data.path, data.closedSetComplexity, data.tries, false}
 }
 
 func main() {
@@ -88,10 +82,10 @@ func main() {
 		noIterativeDepth    bool
 		debug               bool
 		disableUI           bool
-		maxScore            int
 		closedSetComplexity int
 		board               [][]int
 	)
+	handleSignals()
 
 	flag.StringVar(&file, "f", "", "usage : -f [filename]")
 	flag.IntVar(&mapSize, "s", 3, "usage : -s [size]")
@@ -133,29 +127,32 @@ func main() {
 	}
 	fmt.Println("Board is :", board)
 	fmt.Println("Now starting with :", eval.name)
-	data := initData(board, workers, seenNodesSplit)
+	start := time.Now()
+	algoResult := Result{}
 	if !noIterativeDepth {
 		fmt.Println("Search Method : IDA*")
-		maxScore = eval.fx(board, board, goal(len(board)), []byte{}) + 1
+		data := idaData{}
+		data.maxScore = eval.fx(board, board, goal(len(board)), []byte{})
+		data.states = append(data.states, Deep2DSliceCopy(board))
+		hash, _, _ := matrixToStringSelector(board, 1, 1)
+		data.hashes = append(data.hashes, hash)
+		data.fx = eval.fx
+		data.goal = goal(len(board))
+		algoResult = iterateIDA(&data)
 	} else {
 		fmt.Println("Search Method : A*")
-		maxScore |= (1<<31 - 1)
+		data := initData(board, workers, seenNodesSplit)
+		algoResult = iterateAlgo(board, workers, seenNodesSplit, eval.fx, &data)
 	}
-	handleSignals()
-	start := time.Now()
-	iterateAlgo(board, maxScore, workers, seenNodesSplit, eval.fx, &data)
 	end := time.Now()
 	elapsed := end.Sub(start)
-	if data.path != nil {
-		for _, value := range data.seenNodes {
-			closedSetComplexity += len(value)
-		}
+	if algoResult.path != nil {
 		fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
-		fmt.Printf("len of solution : %v, time complexity / tries : %d, space complexity : %d, score : %d\n", len(data.path), data.tries, closedSetComplexity, data.winScore)
+		fmt.Printf("len of solution : %v, time complexity / tries : %d, space complexity : %d\n", len(algoResult.path), algoResult.tries, closedSetComplexity)
 		if !disableUI {
-			displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, closedSetComplexity, workers, seenNodesSplit, speedDisplay)
+			displayBoard(board, algoResult.path, eval.name, elapsed.String(), algoResult.tries, closedSetComplexity, workers, seenNodesSplit, speedDisplay)
 		}
-		fmt.Println(string(data.path))
+		fmt.Println(string(algoResult.path))
 	} else {
 		fmt.Println("No solution !")
 	}

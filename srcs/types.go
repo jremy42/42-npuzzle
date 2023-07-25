@@ -40,10 +40,29 @@ type safeData struct {
 	tries        int
 	maxSizeQueue []int
 
-	path     []byte
-	over     bool
-	win      bool
-	winScore int
-	idle     int
+	path                []byte
+	over                bool
+	win                 bool
+	winScore            int
+	idle                int
+	closedSetComplexity int
 }
 
+type idaData struct {
+	fx                  evalFx
+	maxScore            int
+	path                []byte
+	states              [][][]int
+	hashes              []string
+	goal                [][]int
+	closedSetComplexity int
+	tries               int
+	ramFailure          bool
+}
+
+type Result struct {
+	path                []byte
+	closedSetComplexity int
+	tries               int
+	ramFailure          bool
+}
