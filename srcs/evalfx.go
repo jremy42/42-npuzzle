@@ -32,7 +32,7 @@ func greedy_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 	return score
 }
 
-func greedy_inv(pos, startPos, goalPos [][]int, path []byte) int {
+/* func greedy_inv(pos, startPos, goalPos [][]int, path []byte) int {
 	flattenedPos := matrixToTableSnail(pos)
 	inversion := 0
 	for i := range flattenedPos {
@@ -43,7 +43,7 @@ func greedy_inv(pos, startPos, goalPos [][]int, path []byte) int {
 		}
 	}
 	return inversion
-}
+} */
 func astar_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 	return len(path) + 1 + greedy_hamming(pos, startPos, goalPos, path)
 }
@@ -55,6 +55,22 @@ func astar_manhattan_generator(weight float64) evalFx {
 	}
 }
 
-func astar_inv(pos, startPos, goalPos [][]int, path []byte) int {
-	return len(path) + 1 + greedy_inv(pos, startPos, goalPos, path)
+func greedy_max_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
+	max := 0
+	for j, row := range goalPos {
+		for i, value := range row {
+			if pos[j][i] != value {
+				wrongPositon := getValuePostion(pos, value)
+				score := int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
+				if score > max {
+					max = score
+				}
+			}
+		}
+	}
+	return max
+}
+
+func astar_max_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
+	return len(path) + 1 + greedy_max_manhattan(pos, startPos, goalPos, path)
 }

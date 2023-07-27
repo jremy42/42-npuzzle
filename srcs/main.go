@@ -73,17 +73,16 @@ func iterateAlgo(board [][]int, workers int, seenNodesSplit int, evalfx evalFx, 
 
 func main() {
 	var (
-		file                string
-		mapSize             int
-		heuristic           string
-		workers             int
-		seenNodesSplit      int
-		speedDisplay        int
-		noIterativeDepth    bool
-		debug               bool
-		disableUI           bool
-		closedSetComplexity int
-		board               [][]int
+		file             string
+		mapSize          int
+		heuristic        string
+		workers          int
+		seenNodesSplit   int
+		speedDisplay     int
+		noIterativeDepth bool
+		debug            bool
+		disableUI        bool
+		board            [][]int
 	)
 	handleSignals()
 
@@ -148,9 +147,9 @@ func main() {
 	elapsed := end.Sub(start)
 	if algoResult.path != nil {
 		fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
-		fmt.Printf("len of solution : %v, time complexity / tries : %d, space complexity : %d\n", len(algoResult.path), algoResult.tries, closedSetComplexity)
+		fmt.Printf("len of solution : %v, time complexity / tries : %d, space complexity : %d\n", len(algoResult.path), algoResult.tries, algoResult.closedSetComplexity)
 		if !disableUI {
-			displayBoard(board, algoResult.path, eval.name, elapsed.String(), algoResult.tries, closedSetComplexity, workers, seenNodesSplit, speedDisplay)
+			displayBoard(board, algoResult.path, eval.name, elapsed.String(), algoResult.tries, algoResult.closedSetComplexity, workers, seenNodesSplit, speedDisplay)
 		}
 		fmt.Println(string(algoResult.path))
 	} else {

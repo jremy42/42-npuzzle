@@ -3,10 +3,10 @@ package main
 var evals = []eval{
 	{"dijkstra", dijkstra},
 	{"greedy_hamming", greedy_hamming},
-	{"greedy_inv", greedy_inv},
 	{"greedy_manhattan", greedy_manhattan},
+	{"greedy_max_manhattan", greedy_max_manhattan},
 	{"astar_hamming", astar_hamming},
-	{"astar_inv", astar_inv},
+	{"astar_max_manhattan", astar_max_manhattan},
 	{"astar_manhattan", astar_manhattan_generator(1)},
 	{"astar_manhattan2", astar_manhattan_generator(2)},
 }
